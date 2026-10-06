@@ -1,0 +1,273 @@
+@import 'tailwindcss';
+
+/* `dark:` follows the section theme (data-theme="dark"), not the OS setting. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ───────────────────────── Design tokens ───────────────────────── */
+@theme {
+  --color-ivory: #f5f2eb;
+  --color-paper: #ede9e0;
+  --color-sand: #ddd7cb;
+  --color-ink: #151413;
+  --color-ink-2: #3b3935;
+  --color-muted: #6b665d;
+  --color-accent: #f28c28;
+  /* Accent for small text on light backgrounds (WCAG AA on ivory/paper). */
+  --color-accent-ink: #9c4a08;
+  --color-night: #0d0d0c;
+  --color-night-2: #171716;
+  --color-bone: #ece8df;
+  --color-ash: #8c877e;
+
+  --font-sans: 'Inter Tight Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  --breakpoint-xs: 30rem;
+}
+
+:root {
+  --line: rgb(21 20 19 / 0.12);
+  --line-strong: rgb(21 20 19 / 0.24);
+  --nav-h: 4rem;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --line: rgb(236 232 223 / 0.12);
+  --line-strong: rgb(236 232 223 / 0.26);
+}
+
+/* ───────────────────────── Base ───────────────────────── */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: var(--nav-h);
+  }
+
+  body {
+    @apply bg-ivory font-sans text-ink antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+    font-size: 1rem;
+    line-height: 1.55;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  canvas {
+    display: block;
+    touch-action: pan-y;
+  }
+}
+
+/* The custom cursor replaces the system cursor only on precise pointers. */
+@media (pointer: fine) {
+  html.has-custom-cursor,
+  html.has-custom-cursor * {
+    cursor: none !important;
+  }
+  html.has-custom-cursor input,
+  html.has-custom-cursor textarea,
+  html.has-custom-cursor select {
+    cursor: text !important;
+  }
+}
+
+/* While a physics node is being dragged, hover-only UI steps aside. */
+html[data-dragging] .preview-follower {
+  visibility: hidden;
+}
+
+/* ───────────────────────── Components ───────────────────────── */
+@layer components {
+  .shell {
+    @apply mx-auto w-full max-w-[1520px] px-5 sm:px-8 lg:px-12;
+  }
+
+  .section {
+    padding-block: clamp(6rem, 12vw, 11rem);
+  }
+
+  /* Mono micro-labels: indices, metadata, UI chrome */
+  .t-label {
+    @apply font-mono uppercase;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    letter-spacing: 0.14em;
+    font-weight: 450;
+  }
+
+  .t-meta {
+    @apply font-mono;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+  }
+
+  .t-display {
+    font-weight: 560;
+    letter-spacing: -0.055em;
+    line-height: 0.82;
+  }
+
+  .t-h1 {
+    font-size: clamp(2.6rem, 6.4vw, 6.6rem);
+    font-weight: 500;
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+  }
+
+  .t-h2 {
+    font-size: clamp(2rem, 4.4vw, 4.4rem);
+    font-weight: 500;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .t-h3 {
+    font-size: clamp(1.45rem, 2.3vw, 2.25rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+  }
+
+  .t-lead {
+    font-size: clamp(1.125rem, 1.45vw, 1.375rem);
+    line-height: 1.5;
+    letter-spacing: -0.012em;
+  }
+
+  .t-serif {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  .hairline {
+    border-color: var(--line);
+  }
+
+  /* Text link with an underline that draws from left to right */
+  .link-draw {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 100% 100%;
+    background-size: 0% 1px;
+    transition: background-size 0.5s var(--ease-out-expo);
+  }
+  .link-draw:hover,
+  .link-draw:focus-visible {
+    background-position: 0% 100%;
+    background-size: 100% 1px;
+  }
+
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    @apply sr-only;
+  }
+}
+
+/* ───────────────────────── Utilities ───────────────────────── */
+@utility will-transform {
+  will-change: transform;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Hero intro. Delays are offset by --t0 so the hydrated hero continues the
+   animation started by the static first-paint shell (see Hero.tsx). */
+@keyframes intro-rise {
+  from {
+    transform: translate3d(0, 102%, 0);
+  }
+}
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--intro-y, 0px), 0);
+  }
+}
+.intro-rise,
+.intro-fade {
+  animation-duration: 1.15s;
+  animation-timing-function: var(--ease-out-expo);
+  animation-fill-mode: both;
+  animation-delay: calc(var(--d, 0s) - var(--t0, 0s));
+}
+.intro-rise {
+  animation-name: intro-rise;
+}
+.intro-fade {
+  animation-name: intro-fade;
+}
+
+/* Flowing dots along pipeline connectors (research figure) */
+@keyframes flow-x {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes flow-y {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ───────────────────────── Reduced motion ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.12s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html[data-motion='reduce'] *,
+html[data-motion='reduce'] *::before,
+html[data-motion='reduce'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+}
