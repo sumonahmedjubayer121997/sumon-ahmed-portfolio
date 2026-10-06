@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// Content model
+// - Content collections are public for *published* documents only: the build
+//   pulls them with the ordinary web config, and they are on the website anyway.
+//   Drafts (published == false) are visible to admins only.
+// - Admins are users with a document at admins/{uid} — created once by hand in
+//   the Firebase console (the /admin page shows your UID).
+// - chunks, assistantLogs and messages are written only by Cloud Functions
+//   (Admin SDK bypasses these rules).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Null-safe: reading a document that doesn't exist yields "not found", not an error.
+    function readable() {
+      return resource == null || resource.data.get('published', false) == true || isAdmin();
+    }
+
+    // Content collections
+    match /site/{id}       { allow read: if readable(); allow write: if isAdmin(); }
+    match /research/{id}   { allow read: if readable(); allow write: if isAdmin(); }
+    match /projects/{id}   { allow read: if readable(); allow write: if isAdmin(); }
+    match /experience/{id} { allow read: if readable(); allow write: if isAdmin(); }
+    match /skills/{id}     { allow read: if readable(); allow write: if isAdmin(); }
+    match /posts/{id}      { allow read: if readable(); allow write: if isAdmin(); }
+
+    // A signed-in user may check whether they are an admin; nobody writes here from clients.
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Server-only data
+    match /chunks/{id}        { allow read, write: if false; }
+    match /assistantLogs/{id} { allow read: if isAdmin(); allow write: if false; }
+    match /messages/{id}      { allow read, delete: if isAdmin(); allow create, update: if false; }
+  }
+}

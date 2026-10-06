@@ -7,7 +7,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
-import { concepts, projects, type Concept, type Project } from '@/data/projects';
+import { concepts, projects, type Concept, type Project } from '@/content';
 import { cn } from '@/lib/cn';
 import { palette, rgba } from '@/lib/color';
 import { createRandom } from '@/lib/random';

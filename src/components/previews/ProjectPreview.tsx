@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import type { PreviewKind } from '@/data/projects';
+import type { PreviewKind } from '@/content';
 import { createRandom } from '@/lib/random';
 import { cn } from '@/lib/cn';
 

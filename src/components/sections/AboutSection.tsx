@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { about } from '@/data/about';
+import { about } from '@/content';
 import { clamp } from '@/lib/math';
 import { cn } from '@/lib/cn';
 import { useScrollPhysics } from '@/hooks/useScrollPhysics';

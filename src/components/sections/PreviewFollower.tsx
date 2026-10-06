@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from 'react';
 import { AnimatePresence, m } from 'motion/react';
-import type { Project } from '@/data/projects';
+import type { Project } from '@/content';
 import { addTicker } from '@/lib/ticker';
 import { pointer } from '@/lib/pointer';
 import { clamp } from '@/lib/math';

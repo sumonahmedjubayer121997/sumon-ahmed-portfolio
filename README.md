@@ -17,28 +17,51 @@ npm run format     # prettier
 
 ---
 
-## Replacing the content
+## Content — Firebase + private admin
 
-All copy lives in `src/data/` — components never hard-code content.
+Your content (profile, projects, experience, skills, research) lives in **Firestore** and is edited in a private
+**content studio at `/admin`**. The public site never talks to Firestore: `npm run build` (and `npm run dev`) first runs
+`scripts/content/pull.ts`, which reads _published_ documents, validates them against the zod schemas in
+`src/content/schema.ts` (invalid content fails the build) and writes `src/generated/content.json`. Components read it
+through `src/content/index.ts`.
 
-| File            | What it holds                                                                            |
-| --------------- | ---------------------------------------------------------------------------------------- |
-| `site.ts`       | Name, roles, statement, intro, location, **email**, **social links**, nav                |
-| `projects.ts`   | The four projects, their concept links, positions in the project system, case-study copy |
-| `aiLab.ts`      | AI Lab components, links and the two animated pipelines (RAG, agent loop)                |
-| `dataModel.ts`  | The four Data → Model stages and prediction class shares                                 |
-| `about.ts`      | About heading, paragraphs, facts and the discipline path                                 |
-| `research.ts`   | MSc dissertation details, abstract, figure stages                                        |
-| `skills.ts`     | Skill groups, their items and their centres in the ecosystem                             |
-| `experience.ts` | Timeline milestones                                                                      |
-| `blog.ts`       | Posts as structured blocks (`p`, `h2`, `code`, `formula`, `list`, `demo`)                |
-| `catalogue.ts`  | Fictional titles used by the TF-IDF demo                                                 |
+```
+/admin (Google sign-in, admins/{uid}) ──▶ Firestore + Storage ──(build)──▶ src/generated/content.json ──▶ static site
+```
 
-**Before publishing**, search for `TODO` and `PLACEHOLDER`:
+- **No Firebase configured?** The pull falls back to the bundled starter content (`src/content/seed.ts`, built from
+  `src/data/*`), so the site always builds. Set `CONTENT_SOURCE=firestore` in CI so placeholders can never ship by
+  accident.
+- **Placeholders** — starter values that are invented (metrics, email, socials, timeline) are flagged per field. The
+  studio overview lists everything still flagged; editing a field (or "Mark as real") clears it.
+- **Evaluation figures** — add confusion matrices and precision–recall curves from your real numbers (paste straight
+  from a spreadsheet or `sklearn` output), or upload images to Storage. They render as accessible charts on project pages.
+- Blog posts and the AI Lab / Method copy still live in `src/data/` (posts move to MDX in a later stage).
 
-- `site.ts` — the email address (`hello@sumonahmed.dev`) and social URLs are placeholders.
-- `projects.ts` — outcome metrics marked `PLACEHOLDER` are illustrative. Replace them with your real results.
-- `research.ts` / `experience.ts` — confirm years, roles and the risk value shown in Fig. 1 (`ResearchSection.tsx`).
+### Try it locally (Firebase Emulator Suite — no real project needed)
+
+```bash
+npm run emulators      # Auth, Firestore, Storage on localhost (UI at http://localhost:4000)
+npm run dev:emu        # site + /admin wired to the emulators → http://localhost:5173/admin
+```
+
+On `/admin` choose **Local test account**, copy the user ID it shows, create a document `admins/<that id>` in the
+emulator UI (Firestore tab), press **Check again**, then **Import starter content**.
+
+### Connect your real Firebase project (one-time)
+
+1. `firebase login --reauth`
+2. Create a project at console.firebase.google.com → enable **Firestore** (region `europe-west2`), **Storage** and
+   **Authentication → Google** sign-in.
+3. Project settings → _Your apps_ → add a **Web app**; copy its config into `.env.local` and `.env.production`
+   (see `.env.example` — these values are not secret).
+4. `firebase use --add` (pick the project), then deploy the security rules:
+   `firebase deploy --only firestore:rules,storage`
+5. Open `/admin`, sign in with Google, create `admins/<your uid>` in the console as instructed, import the starter
+   content and start replacing placeholders.
+
+Security model (see `firestore.rules`, `storage.rules`): published content is publicly readable (it's on the website
+anyway); drafts, writes and uploads require an `admins/{uid}` document; assistant logs and messages are server-only.
 
 ---
 
@@ -63,6 +86,12 @@ src/
   lib/           ticker, pointer, scroll, device, store, colour, maths, NLP, TF-IDF, scene layouts
   data/          content (see above)
   pages/         HomePage, ProjectPage, BlogPostPage, NotFoundPage
+  content/       zod schemas, seed content, typed accessors, Firebase env
+  admin/         private content studio (/admin): auth gate, editors, figure editor
+  components/figures/  ConfusionMatrix, PRCurve, EvaluationFigure
+scripts/
+  content/pull.ts      build-time Firestore pull + validation
+  emulators.mjs        starts the Firebase emulators (includes a Windows Java fix)
 ```
 
 ### Physics model

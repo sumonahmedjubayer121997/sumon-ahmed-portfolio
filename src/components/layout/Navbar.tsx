@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { AnimatePresence, m } from 'motion/react';
 import { useLocation } from 'react-router';
-import { navItems, site } from '@/data/site';
+import { navItems, site } from '@/content';
 import { useUI } from '@/lib/store';
 import { cn } from '@/lib/cn';
 import { springs } from '@/physics/spring';

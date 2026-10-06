@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 import { useUI } from '@/lib/store';
-import { navItems } from '@/data/site';
+import { navItems } from '@/content';
 
 /**
  * Tracks which section sits under the navigation bar (to switch its theme over

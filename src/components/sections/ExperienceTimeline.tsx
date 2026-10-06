@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { milestones } from '@/data/experience';
+import { milestones } from '@/content';
 import { useScrollPhysics } from '@/hooks/useScrollPhysics';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useElementSize } from '@/hooks/useElementSize';

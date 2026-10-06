@@ -3,3 +3,11 @@ dist
 *.local
 .DS_Store
 .vite
+
+# Generated at build time from Firestore (scripts/content/pull.ts)
+src/generated/
+
+# Firebase
+.emulator-data/
+*-debug.log
+.firebase/

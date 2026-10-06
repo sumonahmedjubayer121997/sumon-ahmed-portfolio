@@ -1,4 +1,4 @@
-import { site } from '@/data/site';
+import { site } from '@/content';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 

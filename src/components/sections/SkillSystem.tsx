@@ -7,7 +7,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
-import { skillGroups } from '@/data/skills';
+import { skillGroups } from '@/content';
 import { palette, rgba } from '@/lib/color';
 import { createRandom } from '@/lib/random';
 import { cn } from '@/lib/cn';

@@ -1,5 +1,5 @@
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import type { Concept, Project } from '@/data/projects';
+import type { Concept, Project } from '@/content';
 import { cn } from '@/lib/cn';
 import { TransitionLink } from '@/components/ui/TransitionLink';
 import { SwapArrow } from '@/components/ui/Arrow';

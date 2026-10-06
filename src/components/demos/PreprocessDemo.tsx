@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { research } from '@/data/research';
+import { research } from '@/content';
 import { analyse } from '@/lib/nlp';
 import { cn } from '@/lib/cn';
 

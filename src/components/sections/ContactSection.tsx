@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { site } from '@/data/site';
+import { site } from '@/content';
 import { useMagneticInteraction } from '@/hooks/useMagneticInteraction';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { SectionLabel } from '@/components/ui/SectionLabel';

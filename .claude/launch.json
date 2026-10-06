@@ -12,6 +12,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "preview", "--", "--port", "4173", "--strictPort"],
       "port": 4173
+    },
+    {
+      "name": "portfolio-dev-emulators",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:emu", "--", "--port", "5174", "--strictPort"],
+      "port": 5174
+    },
+    {
+      "name": "firebase-emulators",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/emulators.mjs", "--only", "auth,firestore,storage"],
+      "port": 4000
     }
   ]
 }

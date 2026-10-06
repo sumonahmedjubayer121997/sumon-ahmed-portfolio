@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { site } from '@/data/site';
+import { site } from '@/content';
 import { budget } from '@/lib/device';
 import type { HeroBand } from '@/lib/heroStructure';
 import { useIsMobile } from '@/hooks/useMediaQuery';
@@ -69,7 +69,8 @@ export function Hero() {
     const n = budget({ high: 680, mid: 440, low: 240 });
     return compact ? Math.min(n, 280) : n;
   }, [compact]);
-  const [first, last] = site.name.toUpperCase().split(' ');
+  const [first, ...restOfName] = site.name.toUpperCase().split(' ');
+  const last = restOfName.join(' ');
   const sectionRef = useRef<HTMLElement>(null);
   const rolesRef = useRef<HTMLDivElement>(null);
   const statementRef = useRef<HTMLParagraphElement>(null);

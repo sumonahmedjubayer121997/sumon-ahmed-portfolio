@@ -1,4 +1,4 @@
-import { projects } from '@/data/projects';
+import { projects } from '@/content';
 import { TransitionLink } from '@/components/ui/TransitionLink';
 import { SwapArrow } from '@/components/ui/Arrow';
 import { ProjectPreview } from '@/components/previews/ProjectPreview';

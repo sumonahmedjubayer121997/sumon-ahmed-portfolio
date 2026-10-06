@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { m } from 'motion/react';
-import { research } from '@/data/research';
+import { research } from '@/content';
 import { analyse } from '@/lib/nlp';
 import { createRandom } from '@/lib/random';
 import { cn } from '@/lib/cn';
@@ -51,7 +51,7 @@ function ResearchFigure() {
     const r = createRandom(12);
     return Array.from({ length: 40 }, () => r.next() ** 2.2);
   }, []);
-  const risk = 0.81; // PLACEHOLDER: illustrative model output
+  const risk = research.riskScore;
 
   const columns = [
     <p key="text" className="text-[0.92rem] leading-relaxed text-ink-2">

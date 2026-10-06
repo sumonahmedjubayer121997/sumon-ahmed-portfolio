@@ -1,6 +1,6 @@
 import { Suspense, lazy, type ReactNode } from 'react';
 import { useParams } from 'react-router';
-import { getProject, projects, type DemoKind } from '@/data/projects';
+import { getProject, projects, type DemoKind } from '@/content';
 import { pipelines } from '@/data/aiLab';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { TransitionLink } from '@/components/ui/TransitionLink';
@@ -10,6 +10,7 @@ import { Tilt } from '@/components/ui/Tilt';
 import { Arrow, SwapArrow } from '@/components/ui/Arrow';
 import { ScrollInertia } from '@/components/ui/ScrollInertia';
 import { ProjectPreview } from '@/components/previews/ProjectPreview';
+import { EvaluationFigure } from '@/components/figures/EvaluationFigure';
 import { PipelineVisualization } from '@/components/sections/PipelineVisualization';
 import NotFoundPage from './NotFoundPage';
 
@@ -133,16 +134,56 @@ export default function ProjectPage() {
               </ScrollInertia>
             ))}
           </dl>
-          {project.links.length > 0 && (
+          {(project.links.length > 0 || project.repoUrl || project.liveUrl) && (
             <div className="mt-12 flex flex-wrap gap-4">
-              {project.links.map((l) => (
-                <MagneticButton key={l.href} to={l.href} variant="outline" arrow="right">
-                  {l.label}
+              {project.repoUrl && (
+                <MagneticButton href={project.repoUrl} variant="solid" cursor="Code">
+                  Source code
                 </MagneticButton>
-              ))}
+              )}
+              {project.liveUrl && (
+                <MagneticButton href={project.liveUrl} variant="outline" cursor="Open">
+                  Live project
+                </MagneticButton>
+              )}
+              {project.links.map((l) =>
+                /^https?:/.test(l.href) ? (
+                  <MagneticButton key={l.href} href={l.href} variant="outline">
+                    {l.label}
+                  </MagneticButton>
+                ) : (
+                  <MagneticButton key={l.href} to={l.href} variant="outline" arrow="right">
+                    {l.label}
+                  </MagneticButton>
+                ),
+              )}
             </div>
           )}
         </Block>
+
+        {project.figures.length > 0 && (
+          <Block label="Evaluation">
+            <div className="grid gap-16">
+              {project.figures.map((f, n) => (
+                <EvaluationFigure key={n} figure={f} />
+              ))}
+            </div>
+          </Block>
+        )}
+
+        {project.decisions.length > 0 && (
+          <Block label="Decisions & trade-offs">
+            <ol className="grid gap-x-10 gap-y-10 sm:grid-cols-2">
+              {project.decisions.map((d, n) => (
+                <li key={d.title} className="border-t border-[var(--line)] pt-5">
+                  <span className="t-label text-muted">D{n + 1}</span>
+                  <h3 className="mt-2 text-[1.2rem] font-medium tracking-[-0.02em]">{d.title}</h3>
+                  <p className="mt-2 text-[1rem] leading-relaxed text-ink-2">{d.body}</p>
+                </li>
+              ))}
+            </ol>
+          </Block>
+        )}
       </div>
 
       <div className="shell">

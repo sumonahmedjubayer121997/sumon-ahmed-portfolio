@@ -1,12 +1,27 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { Plugin } from 'vite';
-import { navItems, site } from '../src/data/site';
+import { navItems } from '../src/data/site';
+
+/** Site copy as pulled from Firestore at build time (scripts/content/pull.ts). */
+type ShellSite = {
+  name: string;
+  role: string;
+  disciplines: string[];
+  location: string;
+  year: number;
+  intro: string;
+  statement: { lead: string; emphasis: string };
+};
+const loadSite = (): ShellSite =>
+  JSON.parse(readFileSync(resolve(process.cwd(), 'src/generated/content.json'), 'utf8')).site;
 
 /**
  * Static first-paint shell.
  *
  * The site is a client-rendered SPA, so without this the first paint waits for
  * the JS bundle. This plugin renders the navigation and hero copy (from the same
- * data file the React app uses) into #root, styled by the same Tailwind classes,
+ * pulled content the React app uses) into #root, styled by the same Tailwind classes,
  * so text paints as soon as the CSS arrives. React replaces it on mount and the
  * hero continues the CSS intro from where the shell left off (see Hero.tsx).
  *
@@ -33,7 +48,9 @@ const nameLine = (text: string, start: number) =>
 const tag = (text: string) => `<span class="inline-block"><span class="inline-block">${esc(text)}</span></span>`;
 
 function renderShell() {
-  const [first, last] = site.name.toUpperCase().split(' ');
+  const site = loadSite();
+  const [first, ...rest] = site.name.toUpperCase().split(' ');
+  const last = rest.join(' ');
   const logo = `<svg viewBox="0 0 20 20" class="h-4 w-4" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="6" r="1.4" opacity="0.5"/><circle cx="4" cy="14" r="1.4" opacity="0.5"/><circle cx="10" cy="4" r="1.4" opacity="0.8"/><circle cx="10" cy="10" r="1.4" opacity="0.8"/><circle cx="10" cy="16" r="1.4" opacity="0.8"/></g><circle cx="16.5" cy="10" r="2" fill="var(--color-accent)"/></svg>`;
   const btn =
     'group relative inline-flex items-center justify-center whitespace-nowrap rounded-full t-label transition-colors duration-300';
