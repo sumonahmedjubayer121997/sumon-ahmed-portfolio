@@ -244,6 +244,8 @@ const ogDone = new Set<string>();
 for (const r of routes) {
   const app = await render(r.path);
   if (!app.includes('<h1')) throw new Error(`Prerendered ${r.path} has no <h1> — did the route render?`);
+  // An outlined boundary would leave the page content outside its place until a script moves it.
+  if (/<template id="B:|\$RC\(/.test(app)) throw new Error(`Prerendered ${r.path} has an outlined Suspense boundary.`);
   const html = base
     .replace('</head>', `${head(r)}\n  </head>`)
     .replace('<div id="root"></div>', `<div id="root">${app}</div>`);

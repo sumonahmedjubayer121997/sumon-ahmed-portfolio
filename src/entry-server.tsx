@@ -2,6 +2,12 @@
  * Server entry, used only at build time by scripts/prerender.ts to render each
  * public route to static HTML. `prerenderToNodeStream` waits for lazy routes and
  * Suspense boundaries, so the HTML is complete.
+ *
+ * `progressiveChunkSize: Infinity` keeps every boundary inline. By default React
+ * moves large boundaries (> 12.8 kB) into a hidden <div> that an inline script
+ * reveals on the next animation frame — useful when streaming, but for a static
+ * page it means a tab opened in the background (no animation frames) hydrates
+ * against the fallback and fails.
  */
 import { StrictMode } from 'react';
 import { prerenderToNodeStream } from 'react-dom/static';
@@ -15,6 +21,7 @@ export async function render(url: string): Promise<string> {
         <App />
       </StaticRouter>
     </StrictMode>,
+    { progressiveChunkSize: Number.POSITIVE_INFINITY },
   );
   const chunks: Buffer[] = [];
   for await (const chunk of prelude) chunks.push(Buffer.from(chunk));
