@@ -1,11 +1,11 @@
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import { modelStages, classLabels, classShares } from '@/data/dataModel';
-import { budget, supportsWebGL } from '@/lib/device';
 import { stageValue } from '@/lib/dataModelStages';
 import { cn } from '@/lib/cn';
 import { useScrollPhysics } from '@/hooks/useScrollPhysics';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useIsMobile } from '@/hooks/useMediaQuery';
+import { useBudget, useWebGL } from '@/hooks/useDevice';
 import { PhysicsCanvas } from '@/components/PhysicsCanvas';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { RevealText } from '@/components/ui/RevealText';
@@ -20,7 +20,7 @@ const loadScene = () => import('@/three/DataModelScene');
  */
 export function DataModelSection() {
   const reduced = useReducedMotion();
-  const webgl = useMemo(() => supportsWebGL(), []);
+  const webgl = useWebGL();
 
   if (reduced || !webgl) {
     return (
@@ -63,10 +63,8 @@ function PinnedStory() {
   const labelRefs = useRef<Array<HTMLElement | null>>([]);
   const lastActive = useRef(-1);
 
-  const count = useMemo(() => {
-    const n = budget({ high: 1000, mid: 640, low: 360 });
-    return compact ? Math.min(n, 460) : n;
-  }, [compact]);
+  const n = useBudget({ high: 1000, mid: 640, low: 360 });
+  const count = compact ? Math.min(n, 460) : n;
 
   const progress = useScrollPhysics(trackRef, {
     mode: 'pinned',

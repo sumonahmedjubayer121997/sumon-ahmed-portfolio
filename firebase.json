@@ -12,7 +12,7 @@
     "cleanUrls": true,
     "trailingSlash": false,
     "ignore": ["firebase.json", "**/.*"],
-    "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    "rewrites": [{ "source": "/admin{,/**}", "destination": "/app.html" }],
     "headers": [
       {
         "source": "/assets/**",

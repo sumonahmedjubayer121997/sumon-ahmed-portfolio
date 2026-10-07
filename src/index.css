@@ -68,6 +68,11 @@
     border-radius: 2px;
   }
 
+  /* Page headings receive focus after navigation (ScrollManager) — no ring needed. */
+  h1[tabindex='-1']:focus-visible {
+    outline: none;
+  }
+
   a {
     color: inherit;
     text-decoration: none;
@@ -201,8 +206,8 @@ html[data-dragging] .preview-follower {
   }
 }
 
-/* Hero intro. Delays are offset by --t0 so the hydrated hero continues the
-   animation started by the static first-paint shell (see Hero.tsx). */
+/* Intro animations for prerendered content (hero, page titles): pure CSS, so
+   they play from first paint. --t0 lets a late-mounted hero skip ahead (Hero.tsx). */
 @keyframes intro-rise {
   from {
     transform: translate3d(0, 102%, 0);

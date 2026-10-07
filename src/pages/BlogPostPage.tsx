@@ -6,7 +6,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useScrollPhysics } from '@/hooks/useScrollPhysics';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { TransitionLink } from '@/components/ui/TransitionLink';
-import { RevealText } from '@/components/ui/RevealText';
+import { IntroText } from '@/components/ui/IntroText';
 import { Arrow, SwapArrow } from '@/components/ui/Arrow';
 import { PipelineVisualization } from '@/components/sections/PipelineVisualization';
 import { PostBody } from '@/components/blog/PostBody';
@@ -69,7 +69,7 @@ export default function BlogPostPage() {
           <span>{post.readingTime} read</span>
           <span>{post.tags.join(' · ')}</span>
         </p>
-        <RevealText as="h1" immediate text={post.title} className="t-h1 mt-6 max-w-[16ch]" />
+        <IntroText text={post.title} className="t-h1 mt-6 max-w-[16ch]" />
         <p className="t-lead mt-8 max-w-[52ch] text-ink-2">{post.excerpt}</p>
       </header>
 

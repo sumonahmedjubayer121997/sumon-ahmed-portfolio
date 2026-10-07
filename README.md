@@ -10,8 +10,8 @@ spring maths is cheaper and more controllable for UI.
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm run build      # type-check + production build → dist/
-npm run preview    # serve the production build
+npm run build      # content pull, type-check, client + SSR builds, prerender → dist/
+npm run preview    # serve dist/ the way Firebase Hosting does (clean URLs, 404s, /admin shell)
 npm run format     # prettier
 ```
 
@@ -117,19 +117,41 @@ distance → force → acceleration → velocity → position
 
 ### Performance
 
-- **First paint without JavaScript:** `build/htmlShell.ts` renders the navigation and hero copy (from
-  `src/data/site.ts`) into `index.html` at build time, so text paints before the bundle runs. React replaces it on mount
-  and continues the CSS intro from the same point, and below-the-fold sections render in a time-sliced transition.
+- **Prerendered pages:** every public route is rendered to static HTML at build time (see _Prerendering_ below), so
+  text paints before any JavaScript runs and React hydrates the existing markup. The hero and page titles animate in
+  with CSS (`intro-rise`), which starts at first paint and simply continues through hydration. On client-side
+  navigation to the homepage, sections below the fold render in a time-sliced transition.
 
 - three.js / R3F live in a separate chunk, loaded only when a scene approaches the viewport (the hero waits for idle).
 - Render loops pause off-screen; adaptive pixel ratio via drei's `PerformanceMonitor`.
 - Particle budgets by device tier (`lib/device.ts`); fewer particles and no physics stages on mobile.
 - No React re-renders in animation paths: refs, typed arrays and transient Zustand reads only.
 
+### Prerendering, SEO and link previews
+
+`npm run build` runs: content pull → `tsc -b` → client build → SSR build of `src/entry-server.tsx` →
+`scripts/prerender.ts`, which writes:
+
+- `index.html`, `work/<slug>.html`, `blog/<slug>.html` and `404.html` — complete HTML per route, with its own `<title>`,
+  description, canonical URL, Open Graph / Twitter tags, JSON-LD (`Person` + `WebSite`, `CreativeWork`,
+  `BlogPosting`) and `modulepreload` links for the route's chunks;
+- `og/*.png` — 1200×630 link-preview images drawn with satori + resvg (`scripts/og.ts`);
+- `sitemap.xml` and `robots.txt`; `app.html` — an empty client shell, served only for `/admin`.
+
+`SITE_URL` (default `https://sumonahmed.web.app`) sets canonical and Open Graph URLs — set it in `.env.production`
+when a custom domain is added.
+
+**Hydration rule:** the browser's first render must match the server's HTML. Browser-only values (WebGL support,
+quality tier, reduced motion, timings) therefore come from `useClientValue` / `useWebGL` / `useBudget`
+(`src/lib/hydration.ts`, `src/hooks/useDevice.ts`): server default during hydration, real value right after.
+Never read `window`, `navigator` or `performance` during render.
+
 ### Accessibility
 
 - Semantic landmarks, skip link, visible focus rings, real links/buttons for every interactive object
   (WebGL is decorative; its content exists as DOM text and controls).
+- After client-side navigation, focus moves to the new page's `<h1>` and its title is announced in a live region
+  (`ScrollManager`), as a full page load would. Without JavaScript, scroll-reveal text is shown immediately.
 - `prefers-reduced-motion`: custom cursor and physics disabled, WebGL replaced by static SVG renders of the same
   scenes, scroll stories become small multiples, page transitions become instant.
 
@@ -153,8 +175,14 @@ distance → force → acceleration → velocity → position
 
 ## Deployment
 
-It's a static SPA. Deep links (`/work/…`, `/blog/…`) need a rewrite to `index.html`:
+Firebase Hosting, site `sumonahmed` (https://sumonahmed.web.app):
 
-- **Netlify** — `public/_redirects` is included.
-- **Vercel** — `vercel.json` is included.
-- **Firebase Hosting** — add `"rewrites": [{ "source": "**", "destination": "/index.html" }]`.
+```bash
+npm run build
+npx firebase deploy --only hosting
+```
+
+`firebase.json` serves the prerendered files with clean URLs, sends unknown paths to `404.html` with a real 404
+status, rewrites `/admin` to the client-only `app.html`, marks HTML `no-cache` and hashed assets immutable. Content
+edits in `/admin` appear after the next build + deploy. For Google sign-in on the live `/admin`, add the site's domain
+under Firebase Authentication → Settings → Authorized domains.

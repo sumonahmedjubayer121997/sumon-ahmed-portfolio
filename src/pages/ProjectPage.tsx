@@ -4,7 +4,7 @@ import { getProject, projects, type DemoKind } from '@/content';
 import { pipelines } from '@/data/aiLab';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { TransitionLink } from '@/components/ui/TransitionLink';
-import { RevealText } from '@/components/ui/RevealText';
+import { IntroText } from '@/components/ui/IntroText';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import { Tilt } from '@/components/ui/Tilt';
 import { Arrow, SwapArrow } from '@/components/ui/Arrow';
@@ -61,7 +61,7 @@ export default function ProjectPage() {
         <p className="t-label mt-14 text-muted">
           {project.index} / {String(projects.length).padStart(2, '0')} — {project.discipline}
         </p>
-        <RevealText as="h1" immediate text={project.title} className="t-h1 mt-6 max-w-[15ch]" />
+        <IntroText text={project.title} className="t-h1 mt-6 max-w-[15ch]" />
         <p className="t-lead mt-8 max-w-[56ch] text-ink-2">{project.summary}</p>
 
         <dl className="mt-14 grid grid-cols-2 gap-x-6 gap-y-8 border-t border-[var(--line)] pt-6 md:grid-cols-4">

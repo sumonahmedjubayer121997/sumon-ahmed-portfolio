@@ -1,8 +1,8 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'motion/react';
 import { CORE_ID, labNodes, pipelines, type PipelineId } from '@/data/aiLab';
 import { labLayout, neighbours, projectLayout2D } from '@/lib/aiLabLayout';
-import { budget } from '@/lib/device';
+import { useBudget } from '@/hooks/useDevice';
 import { useUI } from '@/lib/store';
 import { cn } from '@/lib/cn';
 import { useIsMobile } from '@/hooks/useMediaQuery';
@@ -28,7 +28,7 @@ export function AILab() {
   const labelRefs = useRef<Record<string, HTMLElement | null>>({});
   const size = useElementSize(stageRef);
   const [manualPipeline, setManualPipeline] = useState<PipelineId | null>(null);
-  const coreCount = useMemo(() => budget({ high: 760, mid: 480, low: 300 }), []);
+  const coreCount = useBudget({ high: 760, mid: 480, low: 300 });
 
   useEffect(() => {
     if (!useUI.getState().aiActive) setActive(CORE_ID);

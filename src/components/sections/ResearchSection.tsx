@@ -125,6 +125,7 @@ function ResearchFigure() {
           <div key={i} className="contents">
             <m.div
               className="flex min-w-0 flex-col gap-4 border-t border-ink pt-4"
+              data-reveal=""
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '0px 0px -10% 0px' }}

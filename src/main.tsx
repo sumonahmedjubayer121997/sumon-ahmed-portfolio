@@ -1,5 +1,5 @@
 import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import '@fontsource-variable/inter-tight';
 import '@fontsource-variable/jetbrains-mono';
@@ -13,10 +13,16 @@ import App from './App';
 installPointer();
 installScroll();
 
-createRoot(document.getElementById('root')!).render(
+const root = document.getElementById('root')!;
+const app = (
   <StrictMode>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </StrictMode>,
+  </StrictMode>
 );
+
+// Production pages are prerendered (scripts/prerender.ts): hydrate the existing
+// markup. Dev and /admin start from an empty #root.
+if (root.firstElementChild) hydrateRoot(root, app);
+else createRoot(root).render(app);
