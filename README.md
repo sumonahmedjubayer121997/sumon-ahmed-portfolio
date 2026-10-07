@@ -19,7 +19,7 @@ npm run format     # prettier
 
 ## Content — Firebase + private admin
 
-Your content (profile, projects, experience, skills, research) lives in **Firestore** and is edited in a private
+Your content (profile, projects, blog posts, experience, skills, research) lives in **Firestore** and is edited in a private
 **content studio at `/admin`**. The public site never talks to Firestore: `npm run build` (and `npm run dev`) first runs
 `scripts/content/pull.ts`, which reads _published_ documents, validates them against the zod schemas in
 `src/content/schema.ts` (invalid content fails the build) and writes `src/generated/content.json`. Components read it
@@ -36,7 +36,11 @@ through `src/content/index.ts`.
   studio overview lists everything still flagged; editing a field (or "Mark as real") clears it.
 - **Evaluation figures** — add confusion matrices and precision–recall curves from your real numbers (paste straight
   from a spreadsheet or `sklearn` output), or upload images to Storage. They render as accessible charts on project pages.
-- Blog posts and the AI Lab / Method copy still live in `src/data/` (posts move to MDX in a later stage).
+- **Blog posts** are written in the studio in a small Markdown dialect (`src/content/markdown.ts`: headings, lists, code,
+  `$$ formulas $$`, links and `<Demo kind="tfidf" />` for live demos) with a live preview. The syntax is MDX-compatible.
+  Invalid posts (an unclosed code block, an unknown demo) can't be saved and fail the build.
+- **Drafts** — anything with _Published_ off stays in Firestore but is left out of the build.
+- The AI Lab / Method copy and navigation stay in `src/data/` (structural, not content).
 
 ### Try it locally (Firebase Emulator Suite — no real project needed)
 
@@ -46,7 +50,8 @@ npm run dev:emu        # site + /admin wired to the emulators → http://localho
 ```
 
 On `/admin` choose **Local test account**, copy the user ID it shows, create a document `admins/<that id>` in the
-emulator UI (Firestore tab), press **Check again**, then **Import starter content**.
+emulator UI (Firestore tab), press **Check again**, then **Import starter content**. If a section is ever empty (e.g.
+a project set up before blog posts moved to Firestore), the overview offers to import just that section.
 
 ### Connect your real Firebase project (one-time)
 

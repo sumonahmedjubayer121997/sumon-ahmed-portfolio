@@ -1,5 +1,5 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { posts, formatDate, type Post } from '@/data/blog';
+import { posts, formatDate, type RenderedPost } from '@/content';
 import { springs } from '@/physics/spring';
 import { useSpringPhysics } from '@/hooks/useSpringPhysics';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -15,7 +15,7 @@ const ARROW = 56;
  * from the baseline, reading time appears and a round arrow follows the cursor
  * (it replaces the cursor inside the row).
  */
-function BlogRow({ post }: { post: Post }) {
+function BlogRow({ post }: { post: RenderedPost }) {
   const reduced = useReducedMotion();
   const rowRef = useRef<HTMLAnchorElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -127,11 +127,17 @@ export function BlogSection() {
             Explanations I wish I’d had — written to be understood, with working examples where it helps.
           </p>
         </div>
-        <ul className="mt-16 border-t border-[var(--line)] md:mt-20">
-          {posts.map((p) => (
-            <BlogRow key={p.slug} post={p} />
-          ))}
-        </ul>
+        {posts.length ? (
+          <ul className="mt-16 border-t border-[var(--line)] md:mt-20">
+            {posts.map((p) => (
+              <BlogRow key={p.slug} post={p} />
+            ))}
+          </ul>
+        ) : (
+          <p className="t-label mt-16 border-t border-[var(--line)] pt-8 text-muted md:mt-20">
+            First notes coming soon.
+          </p>
+        )}
       </div>
     </section>
   );

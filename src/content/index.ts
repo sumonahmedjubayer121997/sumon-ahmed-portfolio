@@ -6,7 +6,8 @@
  * Structural data (navigation, the project-system concept spine) stays in code.
  */
 import bundle from '@/generated/content.json';
-import type { ContentBundle, Project } from './schema';
+import { parseMarkdown, readingTime, type Block } from './markdown';
+import type { ContentBundle, Post, Project } from './schema';
 
 const content = bundle as unknown as ContentBundle;
 
@@ -20,6 +21,22 @@ export const contentMeta = content.meta;
 
 export const getProject = (slug: string): Project | undefined => projects.find((p) => p.slug === slug);
 
+/** A post with its Markdown body parsed (validated at build time, so it parses cleanly). */
+export interface RenderedPost extends Post {
+  blocks: Block[];
+  readingTime: string;
+}
+
+export const posts: RenderedPost[] = content.posts.map((p) => {
+  const { blocks } = parseMarkdown(p.body);
+  return { ...p, blocks, readingTime: readingTime(blocks) };
+});
+
+export const getPost = (slug: string) => posts.find((p) => p.slug === slug);
+
+export const formatDate = (iso: string) =>
+  new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
 export { navItems, type NavItem } from '@/data/site';
 export { concepts, type Concept } from '@/data/projects';
 export type {
@@ -27,9 +44,11 @@ export type {
   DemoKind,
   Figure,
   Milestone,
+  Post,
   PreviewKind,
   Project,
   Research,
   Site,
   SkillGroup,
 } from './schema';
+export type { Block, PostDemoKind } from './markdown';

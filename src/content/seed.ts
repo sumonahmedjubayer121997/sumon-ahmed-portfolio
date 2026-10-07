@@ -4,7 +4,25 @@ import { projects as seedProjects } from '../data/projects';
 import { milestones as seedMilestones } from '../data/experience';
 import { skillGroups as seedSkills } from '../data/skills';
 import { research as seedResearch } from '../data/research';
-import type { Milestone, Project, Research, Site, SkillGroup } from './schema';
+import { posts as seedPosts } from '../data/blog';
+import type { Milestone, Post, Project, Research, Site, SkillGroup } from './schema';
+
+const REPOS: Record<string, string> = {
+  'netflix-recommendation-system': 'https://github.com/sumonahmedjubayer121997/ds_netflix_Movie_Recommender_backend',
+  'web-applications': 'https://github.com/sumonahmedjubayer121997/sumon-ahmed-portfolio',
+};
+
+/**
+ * Which starter fields are still invented, per project. The Netflix write-up comes
+ * from its repositories; project 04 describes this site. Mental-health and RAG
+ * still need real results, code links and design decisions.
+ */
+const PROJECT_PLACEHOLDERS: Record<string, string[]> = {
+  'netflix-recommendation-system': ['decisions'],
+  'web-applications': [],
+  'mental-health-detection': ['approach', 'outcomes', 'repoUrl', 'decisions', 'figures'],
+  'rag-system': ['approach', 'outcomes', 'repoUrl', 'decisions', 'figures'],
+};
 
 /**
  * Starter content built from the stage-1 data files. Used to populate an empty
@@ -24,7 +42,8 @@ export function seedContent() {
       stages: seedAbout.stages.map((s) => ({ ...s })),
     },
     published: true,
-    placeholders: ['email', 'socials', 'location', 'availability', 'about.facts'],
+    // Email and socials are the public ones from the GitHub profile; these still need confirming.
+    placeholders: ['location', 'availability', 'about.facts'],
   };
 
   const projects: Project[] = seedProjects.map((p, i) => ({
@@ -38,12 +57,11 @@ export function seedContent() {
     links: p.links.map((l) => ({ ...l })),
     decisions: [],
     figures: [],
-    repoUrl: '',
+    repoUrl: REPOS[p.slug] ?? '',
     liveUrl: '',
     order: i,
     published: true,
-    // Project 04's outcomes describe this site and are accurate; the others are invented.
-    placeholders: p.slug === 'web-applications' ? ['repoUrl'] : ['outcomes', 'repoUrl', 'decisions', 'figures'],
+    placeholders: PROJECT_PLACEHOLDERS[p.slug] ?? ['outcomes', 'repoUrl', 'decisions', 'figures'],
   }));
 
   const experience: Milestone[] = seedMilestones.map((m, i) => ({
@@ -52,7 +70,7 @@ export function seedContent() {
     tags: [...m.tags],
     order: i,
     published: true,
-    placeholders: ['year', 'title', 'context', 'body'],
+    placeholders: ['year', 'context', 'body'],
   }));
 
   const skills: SkillGroup[] = seedSkills.map((g, i) => ({
@@ -71,10 +89,20 @@ export function seedContent() {
     figure: seedResearch.figure.map((f) => ({ ...f })),
     riskScore: 0.81,
     published: true,
-    placeholders: ['year', 'riskScore'],
+    placeholders: ['year', 'riskScore', 'abstract'],
   };
 
-  return { site, projects, experience, skills, research };
+  // Explainers drafted for you: read them and make them yours, then mark as real.
+  const posts: Post[] = seedPosts.map((p, i) => ({
+    ...p,
+    tags: [...p.tags],
+    body: p.body.trim(),
+    order: i,
+    published: true,
+    placeholders: ['body'],
+  }));
+
+  return { site, projects, experience, skills, research, posts };
 }
 
 export type SeedContent = ReturnType<typeof seedContent>;

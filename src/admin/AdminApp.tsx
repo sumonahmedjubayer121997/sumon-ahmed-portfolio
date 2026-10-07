@@ -9,6 +9,8 @@ import Overview from './Overview';
 import ProfileEditor from './editors/ProfileEditor';
 import ProjectsList from './editors/ProjectsList';
 import ProjectEditor from './editors/ProjectEditor';
+import PostsList from './editors/PostsList';
+import PostEditor from './editors/PostEditor';
 import ExperienceEditor from './editors/ExperienceEditor';
 import SkillsEditor from './editors/SkillsEditor';
 import ResearchEditor from './editors/ResearchEditor';
@@ -135,6 +137,7 @@ const NAV = [
   { to: '/admin', label: 'Overview', end: true },
   { to: '/admin/profile', label: 'Profile' },
   { to: '/admin/projects', label: 'Projects' },
+  { to: '/admin/posts', label: 'Blog' },
   { to: '/admin/experience', label: 'Experience' },
   { to: '/admin/skills', label: 'Skills' },
   { to: '/admin/research', label: 'Research' },
@@ -193,6 +196,8 @@ function Studio({ user, onSignOut }: { user: User; onSignOut: () => void }) {
             <Route path="/admin/profile" element={<ProfileEditor />} />
             <Route path="/admin/projects" element={<ProjectsList />} />
             <Route path="/admin/projects/:slug" element={<ProjectEditor />} />
+            <Route path="/admin/posts" element={<PostsList />} />
+            <Route path="/admin/posts/:slug" element={<PostEditor />} />
             <Route path="/admin/experience" element={<ExperienceEditor />} />
             <Route path="/admin/skills" element={<SkillsEditor />} />
             <Route path="/admin/research" element={<ResearchEditor />} />

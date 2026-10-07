@@ -1,5 +1,6 @@
 /**
- * Global site content. Replace the placeholder values marked TODO with real data.
+ * Starter site content (the live site reads Firestore — edit in /admin).
+ * Contact details are the ones published on github.com/sumonahmedjubayer121997.
  */
 export const site = {
   name: 'Sumon Ahmed',
@@ -14,13 +15,10 @@ export const site = {
     'Data scientist and AI engineer. I build data-driven systems, machine learning models and LLM applications — from the first exploratory notebook to the interface people actually use.',
   location: 'United Kingdom', // TODO: confirm
   availability: 'Open to Data Science, ML & AI Engineering roles', // TODO: confirm
-  // TODO: replace with your real address before publishing.
-  email: 'hello@sumonahmed.dev',
+  email: 'sumonahmedjubayer121997@gmail.com',
   socials: [
-    // TODO: replace with your real profile URLs.
-    { label: 'GitHub', href: 'https://github.com/' },
-    { label: 'LinkedIn', href: 'https://www.linkedin.com/' },
-    { label: 'Kaggle', href: 'https://www.kaggle.com/' },
+    { label: 'GitHub', href: 'https://github.com/sumonahmedjubayer121997' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/sumonahmedjubayer' },
   ],
   year: 2026,
 } as const;
