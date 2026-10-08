@@ -164,6 +164,16 @@ Never read `window`, `navigator` or `performance` during render.
 - `prefers-reduced-motion`: custom cursor and physics disabled, WebGL replaced by static SVG renders of the same
   scenes, scroll stories become small multiples, page transitions become instant.
 
+### Keyboard
+
+| Key                     | Action                                                                                 |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `⌘K` / `Ctrl K`, or `/` | Command palette: jump to any project, note or section; copy email, download CV, RSS    |
+| `D`                     | Lab mode: velocity vectors, springs, collision radii, link strain and a live stats HUD |
+| `↑` `↓` `↵` `Esc`       | Move, open and close inside the palette                                                |
+
+Lab mode is off for reduced-motion users (and its footer switch hidden); the palette and HUD load on first use.
+
 ### Debug switches
 
 | URL parameter          | Effect                                            |

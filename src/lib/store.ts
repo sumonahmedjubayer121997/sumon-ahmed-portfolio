@@ -13,6 +13,10 @@ interface UIState {
   transition: TransitionPhase;
   /** Active component in the AI Lab (shared by the WebGL scene, labels and pipeline). */
   aiActive: string | null;
+  /** Lab mode: physics overlays + HUD (press D). */
+  labMode: boolean;
+  /** The command palette (⌘K / Ctrl+K). */
+  paletteOpen: boolean;
 
   setReducedMotion: (value: boolean) => void;
   setNavTheme: (value: NavTheme) => void;
@@ -20,6 +24,8 @@ interface UIState {
   setMenuOpen: (value: boolean) => void;
   setTransition: (value: TransitionPhase) => void;
   setAiActive: (value: string | null) => void;
+  setLabMode: (value: boolean) => void;
+  setPaletteOpen: (value: boolean) => void;
 }
 
 export const useUI = create<UIState>()((set) => ({
@@ -30,6 +36,8 @@ export const useUI = create<UIState>()((set) => ({
   menuOpen: false,
   transition: 'idle',
   aiActive: null,
+  labMode: false,
+  paletteOpen: false,
 
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
   setNavTheme: (navTheme) => set({ navTheme }),
@@ -37,6 +45,8 @@ export const useUI = create<UIState>()((set) => ({
   setMenuOpen: (menuOpen) => set({ menuOpen }),
   setTransition: (transition) => set({ transition }),
   setAiActive: (aiActive) => set({ aiActive }),
+  setLabMode: (labMode) => set({ labMode }),
+  setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
 }));
 
 /** Non-reactive read for render loops. */
