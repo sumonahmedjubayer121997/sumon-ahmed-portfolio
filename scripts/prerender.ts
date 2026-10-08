@@ -39,6 +39,7 @@ interface ServerModule {
   pageTitle(title?: string): string;
   siteTitle: string;
   BLOG_DESCRIPTION: string;
+  MAP_DESCRIPTION: string;
 }
 
 const server: ServerModule = await import(pathToFileURL(resolve(ssrDir, 'entry-server.js')).href);
@@ -178,6 +179,22 @@ const routes: Route[] = [
         headline: p.title,
         url: `${SITE_URL}/blog/${p.slug}`,
       })),
+    },
+  },
+  {
+    path: '/map',
+    file: 'map.html',
+    title: pageTitle('Map of ideas'),
+    description: server.MAP_DESCRIPTION,
+    type: 'website',
+    chunk: 'src/pages/MapPage.tsx',
+    image: 'map',
+    card: {
+      kicker: 'Map of ideas · embeddings + UMAP',
+      title: 'Everything I’ve written, arranged by meaning.',
+      emphasis: 'meaning.',
+      footer: `${host}/map`,
+      tags: ['Embeddings', 'UMAP', 'Similarity'],
     },
   },
   ...posts.map((p): Route => ({

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { NavLink, Navigate, Route, Routes } from 'react-router';
+import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router';
 import type { User } from 'firebase/auth';
 import { cn } from '@/lib/cn';
 import { firebaseEnv } from './firebase';
@@ -14,6 +14,8 @@ import PostEditor from './editors/PostEditor';
 import ExperienceEditor from './editors/ExperienceEditor';
 import SkillsEditor from './editors/SkillsEditor';
 import ResearchEditor from './editors/ResearchEditor';
+import MessagesPage, { MESSAGES_CHANGED } from './editors/MessagesPage';
+import { countNewMessages } from './data';
 
 /**
  * Private content studio at /admin. Lazy-loaded, so the Firebase SDK never ships
@@ -141,9 +143,24 @@ const NAV = [
   { to: '/admin/experience', label: 'Experience' },
   { to: '/admin/skills', label: 'Skills' },
   { to: '/admin/research', label: 'Research' },
+  { to: '/admin/messages', label: 'Messages' },
 ];
 
+/** New contact-form messages, refreshed on navigation and whenever the Messages page changes one. */
+function useUnreadCount() {
+  const { pathname } = useLocation();
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const load = () => void countNewMessages().then(setCount, () => setCount(0));
+    load();
+    window.addEventListener(MESSAGES_CHANGED, load);
+    return () => window.removeEventListener(MESSAGES_CHANGED, load);
+  }, [pathname]);
+  return count;
+}
+
 function Studio({ user, onSignOut }: { user: User; onSignOut: () => void }) {
+  const unread = useUnreadCount();
   return (
     <div className="grid min-h-[100svh] md:grid-cols-[220px_minmax(0,1fr)]">
       <aside className="border-b border-[var(--line)] bg-ivory md:sticky md:top-0 md:h-[100svh] md:border-b-0 md:border-r">
@@ -171,6 +188,14 @@ function Studio({ user, onSignOut }: { user: User; onSignOut: () => void }) {
                 }
               >
                 {n.label}
+                {n.to === '/admin/messages' && unread > 0 && (
+                  <span
+                    className="ml-2 rounded-full bg-accent px-1.5 py-0.5 text-[0.7rem] text-ink"
+                    aria-label={`${unread} new`}
+                  >
+                    {unread}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -201,6 +226,7 @@ function Studio({ user, onSignOut }: { user: User; onSignOut: () => void }) {
             <Route path="/admin/experience" element={<ExperienceEditor />} />
             <Route path="/admin/skills" element={<SkillsEditor />} />
             <Route path="/admin/research" element={<ResearchEditor />} />
+            <Route path="/admin/messages" element={<MessagesPage />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </div>

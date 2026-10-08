@@ -11,6 +11,8 @@ import { PhysicsCanvas } from '@/components/PhysicsCanvas';
 import { AILabFallback } from '@/components/fallbacks/AILabFallback';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { RevealText } from '@/components/ui/RevealText';
+import { TransitionLink } from '@/components/ui/TransitionLink';
+import { Arrow } from '@/components/ui/Arrow';
 import { PipelineVisualization } from './PipelineVisualization';
 
 const loadScene = () => import('@/three/AILabScene');
@@ -72,10 +74,16 @@ export function AILab() {
               className="t-h1 mt-8 max-w-[14ch]"
             />
           </div>
-          <p className="max-w-[42ch] text-[0.98rem] leading-relaxed text-bone/70 md:col-span-4 md:col-start-9">
-            The model is one component. Everything around it exists to give it context and the ability to act. Hover —
-            or tap — a component to see what it does and how information moves.
-          </p>
+          <div className="md:col-span-4 md:col-start-9">
+            <p className="max-w-[42ch] text-[0.98rem] leading-relaxed text-bone/70">
+              The model is one component. Everything around it exists to give it context and the ability to act. Hover —
+              or tap — a component to see what it does and how information moves.
+            </p>
+            <TransitionLink to="/map" className="t-label link-draw mt-5 inline-flex items-center gap-2 text-bone">
+              Embeddings at work: the map of ideas
+              <Arrow className="h-3 w-3" />
+            </TransitionLink>
+          </div>
         </div>
 
         <div className="mt-14 grid gap-10 lg:mt-20 lg:grid-cols-12 lg:gap-6">

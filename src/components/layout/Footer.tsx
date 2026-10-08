@@ -1,7 +1,21 @@
 import { site } from '@/content';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import { TransitionLink } from '@/components/ui/TransitionLink';
+import { useUI } from '@/lib/store';
+import { toggleLabMode } from '@/hooks/useShortcuts';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+
+/** Lab mode for touch screens (keyboard: D). Hidden when reduced motion is on. */
+function LabToggle() {
+  const lab = useUI((s) => s.labMode);
+  const reduced = useUI((s) => s.reducedMotion);
+  if (reduced) return null;
+  return (
+    <button type="button" aria-pressed={lab} onClick={toggleLabMode} className="t-label link-draw text-bone">
+      Lab mode {lab ? 'on' : 'off'}
+    </button>
+  );
+}
 
 export function Footer() {
   const reduced = useReducedMotion();
@@ -16,9 +30,13 @@ export function Footer() {
           <TransitionLink to="/blog" className="t-label link-draw text-bone">
             Writing
           </TransitionLink>
+          <TransitionLink to="/map" className="t-label link-draw text-bone">
+            Map
+          </TransitionLink>
           <a href="/rss.xml" className="t-label link-draw text-bone">
             RSS
           </a>
+          <LabToggle />
         </nav>
         <MagneticButton
           variant="text"

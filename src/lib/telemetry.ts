@@ -10,3 +10,6 @@ export const heroTelemetry = {
   excitation: 0,
   running: false,
 };
+
+/** Physics worlds currently on screen, for the Lab mode HUD (registered by their sections). */
+export const labWorlds = new Map<string, () => { bodies: number; links: number }>();

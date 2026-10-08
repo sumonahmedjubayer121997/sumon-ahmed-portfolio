@@ -47,6 +47,11 @@ through `src/content/index.ts`.
 - **CV and availability** — Profile → _CV and availability_: upload a PDF (up to 700 KB; stored in `site/cv`, written to
   `/cv/<name>.pdf` by each build, so no Storage bucket is needed) or paste a link. A "Download CV" button then appears in
   the hero, contact section, menu and blog author box; the "Available" line can be switched off.
+- **Contact form** — messages go to Firestore `messages/{id}`: anyone may create one, only admins read, triage
+  (new / read / spam) and delete them in `/admin` → Messages (unread count in the sidebar). Spam checks, enforced by
+  `firestore.rules`: an empty honeypot field, ≥ 3 s on the form, length and email checks, at most 3 links, a server
+  timestamp; plus one message per browser per minute. The Firebase SDK loads only once someone starts typing. Email
+  alerts and stronger bot protection (App Check) are the next step and need the Blaze plan.
 - **Drafts and scheduling** — _Published_ off keeps a post out of the build; a future date holds it back until the first
   build on or after that date. Set _Last updated_ when you revise a published post.
 - The AI Lab / Method copy and navigation stay in `src/data/` (structural, not content).
@@ -75,7 +80,8 @@ a project set up before blog posts moved to Firestore), the overview offers to i
    content and start replacing placeholders.
 
 Security model (see `firestore.rules`, `storage.rules`): published content is publicly readable (it's on the website
-anyway); drafts, writes and uploads require an `admins/{uid}` document; assistant logs and messages are server-only.
+anyway); drafts, writes and uploads require an `admins/{uid}` document; contact messages are create-only for visitors
+and readable by admins only; assistant logs are server-only.
 
 ---
 
@@ -163,6 +169,26 @@ Never read `window`, `navigator` or `performance` during render.
   (`ScrollManager`), as a full page load would. Without JavaScript, scroll-reveal text is shown immediately.
 - `prefers-reduced-motion`: custom cursor and physics disabled, WebGL replaced by static SVG renders of the same
   scenes, scroll stories become small multiples, page transitions become instant.
+
+### Embedding map (`/map`)
+
+After the content pull, `scripts/content/embed.ts` splits the writing into passages (project overviews and steps, blog
+sections, research, about, experience, skills), embeds each locally with `all-MiniLM-L6-v2` (transformers.js — no API
+key; the ~23 MB model is cached in `node_modules/.cache`), keeps each passage's 3 nearest neighbours by cosine
+similarity, and lays everything out in 3D with a seeded UMAP. The result (`src/generated/embedding-map.json`, cached by
+content hash) is loaded only by `/map`: a WebGL scene you can drag (with momentum), hover and click to pin, plus a
+panel with the exact similarities and a full passage list for keyboards and screen readers. Without WebGL or with
+reduced motion it falls back to a 2D projection. If the model can't be downloaded, the build keeps the previous map.
+
+### Keyboard
+
+| Key                     | Action                                                                                 |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `⌘K` / `Ctrl K`, or `/` | Command palette: jump to any project, note or section; copy email, download CV, RSS    |
+| `D`                     | Lab mode: velocity vectors, springs, collision radii, link strain and a live stats HUD |
+| `↑` `↓` `↵` `Esc`       | Move, open and close inside the palette                                                |
+
+Lab mode is off for reduced-motion users (and its footer switch hidden); the palette and HUD load on first use.
 
 ### Debug switches
 

@@ -29,4 +29,4 @@ export async function render(url: string): Promise<string> {
 }
 
 export { site, projects, posts, postsByDate, postTags, research, skillGroups } from './content';
-export { pageTitle, siteTitle, BLOG_DESCRIPTION } from './lib/meta';
+export { pageTitle, siteTitle, BLOG_DESCRIPTION, MAP_DESCRIPTION } from './lib/meta';
