@@ -41,6 +41,7 @@ export function RevealText({
     <Component
       id={id}
       className={className}
+      data-reveal=""
       initial="hidden"
       {...(immediate
         ? { animate: 'visible' }

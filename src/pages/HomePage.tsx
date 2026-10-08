@@ -11,11 +11,14 @@ import { BlogSection } from '@/components/sections/BlogSection';
 import { ContactSection } from '@/components/sections/ContactSection';
 import { prefetchWhenIdle } from '@/components/PhysicsCanvas';
 import { supportsWebGL } from '@/lib/device';
+import { useIsHydrating } from '@/lib/hydration';
 
 export default function HomePage() {
-  // The hero renders first; everything below the fold renders in a transition,
-  // which React time-slices so the main thread never locks up during start-up.
-  const [rest, setRest] = useState(false);
+  // Prerendered (and hydrated) pages render everything at once. On client-side
+  // navigation the hero renders first and the rest follows in a transition,
+  // which React time-slices so the main thread never locks up.
+  const hydrating = useIsHydrating();
+  const [rest, setRest] = useState(hydrating);
   useEffect(() => {
     startTransition(() => setRest(true));
   }, []);

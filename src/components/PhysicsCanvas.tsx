@@ -10,7 +10,7 @@ import {
   type ErrorInfo,
   type ReactNode,
 } from 'react';
-import { supportsWebGL } from '@/lib/device';
+import { useWebGL } from '@/hooks/useDevice';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 /** Props every lazily-loaded WebGL scene receives. */
@@ -74,7 +74,7 @@ export function PhysicsCanvas<P extends object>({
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState(eager);
   const [ready, setReady] = useState(false);
-  const webgl = useMemo(() => supportsWebGL(), []);
+  const webgl = useWebGL();
   const useFallback = !webgl || (reduced && fallbackOnReducedMotion);
 
   const Scene = useMemo(() => {

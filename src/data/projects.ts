@@ -84,12 +84,12 @@ export const projects: Project[] = [
       },
     ],
     pipeline: ['Social text', 'Preprocessing', 'Sentiment', 'Features', 'Classifier', 'Risk signal'],
+    // No invented numbers: add your real evaluation results in /admin.
     outcomes: [
-      // PLACEHOLDER metrics
-      { label: 'Macro F1', value: '0.86' },
-      { label: 'Recall (at-risk)', value: '0.89' },
-      { label: 'Models compared', value: '4' },
-      { label: 'Posts analysed', value: '~20k' },
+      { label: 'Goal', value: 'Early detection' },
+      { label: 'Signal', value: 'Sentiment + language' },
+      { label: 'Context', value: 'MSc research' },
+      { label: 'Use', value: 'Research, not diagnosis' },
     ],
     demo: 'preprocess',
     links: [{ label: 'Read the research', href: '/#research' }],
@@ -100,44 +100,56 @@ export const projects: Project[] = [
     title: 'Netflix Recommendation System',
     discipline: 'Machine Learning · Retrieval',
     summary:
-      'A content-based recommender: TF-IDF vectors over descriptions, genres and cast, ranked by cosine similarity.',
-    year: '2024',
-    role: 'Data science',
-    type: 'Recommender system',
-    stack: ['Python', 'Pandas', 'NumPy', 'scikit-learn'],
+      'A content-based movie and TV recommender: TF-IDF over each title’s description and genres, ranked by cosine similarity, served by a Flask API with a React front end.',
+    year: '2025',
+    role: 'Data science · full stack',
+    type: 'Recommender system (deployed)',
+    stack: ['Python', 'Pandas', 'scikit-learn', 'Flask', 'React', 'Vite', 'Render'],
     concepts: ['ml', 'data'],
     position: { x: 0.63, y: 0.66, align: 'left' },
     preview: 'similarity',
     problem:
-      'Thousands of titles and no interaction history — the cold-start problem. Recommendations have to come from the content itself.',
+      'A catalogue of thousands of films and shows with no viewing history to learn from — the cold-start problem. Recommendations have to come from the content itself.',
     approach: [
       {
         title: 'Corpus',
-        body: 'Each title becomes a document: description, genres, cast and director, cleaned and concatenated.',
+        body: 'The Netflix titles dataset (8,807 titles). Each title becomes one document: its description plus its genres (listed_in), with incomplete rows dropped.',
       },
       {
         title: 'Vectorisation',
-        body: 'TF-IDF down-weights words that appear everywhere ("film", "story") and rewards distinctive ones.',
+        body: 'scikit-learn’s TfidfVectorizer with English stop-words: words that appear everywhere are down-weighted, distinctive ones rewarded.',
       },
       {
         title: 'Similarity',
-        body: 'Cosine similarity between sparse vectors — magnitude-invariant, so long and short descriptions compete fairly.',
+        body: 'A cosine-similarity matrix over the TF-IDF vectors — magnitude-invariant, so short and long descriptions compete fairly.',
       },
       {
-        title: 'Ranking',
-        body: 'Top-k neighbours per title, with de-duplication and a light genre-diversity constraint.',
+        title: 'Serving',
+        body: 'A Flask API (POST /recommend) returns the five most similar titles; a React + Vite front end calls it. The API is deployed on Render.',
       },
     ],
-    pipeline: ['Catalogue', 'Clean text', 'TF-IDF', 'Cosine similarity', 'Top-k', 'Recommendations'],
+    pipeline: [
+      'Netflix catalogue',
+      'Description + genres',
+      'TF-IDF',
+      'Cosine similarity',
+      'Top 5',
+      'Flask API → React',
+    ],
     outcomes: [
-      // PLACEHOLDER metrics
-      { label: 'Titles indexed', value: '8.8k' },
-      { label: 'Vocabulary', value: '~18k terms' },
-      { label: 'Query latency', value: '< 20 ms' },
-      { label: 'Approach', value: 'Content-based' },
+      { label: 'Titles indexed', value: '8,807' },
+      { label: 'Films · shows', value: '6,131 · 2,676' },
+      { label: 'Recommendations', value: 'Top 5' },
+      { label: 'Served by', value: 'Flask API' },
     ],
     demo: 'tfidf',
-    links: [{ label: 'How TF-IDF works', href: '/blog/how-tf-idf-actually-works' }],
+    links: [
+      {
+        label: 'Front-end code',
+        href: 'https://github.com/sumonahmedjubayer121997/ds_netflix_Movie_Recommender_frontend',
+      },
+      { label: 'How TF-IDF works', href: '/blog/how-tf-idf-actually-works' },
+    ],
   },
   {
     slug: 'rag-system',
@@ -178,12 +190,12 @@ export const projects: Project[] = [
       },
     ],
     pipeline: ['Documents', 'Chunking', 'Embeddings', 'Vector DB', 'Retrieval', 'LLM'],
+    // No invented numbers: add retrieval hit-rate / faithfulness from your evaluation in /admin.
     outcomes: [
-      // PLACEHOLDER metrics
-      { label: 'Hit-rate @5', value: '0.91' },
-      { label: 'Faithfulness', value: '0.88' },
-      { label: 'Chunk size', value: '512 tok' },
-      { label: 'Citations', value: 'Every answer' },
+      { label: 'Pattern', value: 'Retrieval-augmented' },
+      { label: 'Retrieval', value: 'Embeddings' },
+      { label: 'Knowledge', value: 'Your documents' },
+      { label: 'Output', value: 'Grounded answers' },
     ],
     demo: 'rag-pipeline',
     links: [{ label: 'RAG from first principles', href: '/blog/understanding-rag-from-first-principles' }],

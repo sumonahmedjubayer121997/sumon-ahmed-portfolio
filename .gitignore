@@ -11,3 +11,4 @@ src/generated/
 .emulator-data/
 *-debug.log
 .firebase/
+dist-ssr

@@ -6,7 +6,7 @@ export const about = {
   ],
   facts: [
     { label: 'Based in', value: 'United Kingdom' }, // TODO: confirm
-    { label: 'Education', value: 'MSc Computer Science' },
+    { label: 'Education', value: 'MSc Computer Science · CSE graduate' },
     { label: 'Focus', value: 'LLM systems · ML · Data' },
     { label: 'Currently', value: 'Building RAG & agent systems' },
   ],

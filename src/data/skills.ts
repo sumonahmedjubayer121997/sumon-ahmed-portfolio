@@ -34,6 +34,6 @@ export const skillGroups: SkillGroup[] = [
     label: 'Software',
     note: 'Shipping it as a product people can use.',
     center: { x: 0.86, y: 0.72 },
-    items: ['React', 'TypeScript', 'JavaScript', 'Firebase', 'Git', 'APIs'],
+    items: ['React', 'TypeScript', 'JavaScript', 'Node.js', 'Flask', 'Django', 'Firebase', 'MySQL', 'Docker', 'Git'],
   },
 ];

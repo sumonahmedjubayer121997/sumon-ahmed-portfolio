@@ -34,6 +34,7 @@ import {
   collections,
   contentBundleSchema,
   milestoneSchema,
+  postSchema,
   projectSchema,
   researchSchema,
   siteSchema,
@@ -79,12 +80,13 @@ async function pullFromFirestore(db: Firestore, projectId: string): Promise<Cont
     return snap.docs.map((d) => parse(schema, d.data(), `${path}/${d.id}`)).sort((a, b) => a.order - b.order);
   };
 
-  const [site, research, projects, experience, skills] = await Promise.all([
+  const [site, research, projects, experience, skills, posts] = await Promise.all([
     single(collections.site, siteSchema),
     single(collections.research, researchSchema),
     many(collections.projects, projectSchema),
     many(collections.experience, milestoneSchema),
     many(collections.skills, skillGroupSchema),
+    many(collections.posts, postSchema),
   ]);
   if (!projects.length) throw new ContentError('No published projects in Firestore.');
   return {
@@ -93,6 +95,7 @@ async function pullFromFirestore(db: Firestore, projectId: string): Promise<Cont
     projects,
     experience,
     skills,
+    posts,
     meta: { source: 'firestore', pulledAt: new Date().toISOString(), projectId },
   };
 }
@@ -118,7 +121,8 @@ async function main() {
       bundle = await withTimeout(pullFromFirestore(db, cfg.projectId), 15000);
       console.log(
         `[content] pulled from Firestore${cfg.useEmulators ? ' (emulator)' : ''} · ${cfg.projectId} · ` +
-          `${bundle.projects.length} projects, ${bundle.experience.length} milestones, ${bundle.skills.length} skill groups`,
+          `${bundle.projects.length} projects, ${bundle.experience.length} milestones, ` +
+          `${bundle.skills.length} skill groups, ${bundle.posts.length} posts`,
       );
     } catch (err) {
       // Invalid content always fails — publishing broken content must never succeed silently.

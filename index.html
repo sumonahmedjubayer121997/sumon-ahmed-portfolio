@@ -16,6 +16,16 @@
     />
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Without JavaScript, scroll reveals never run: show their content. -->
+    <noscript>
+      <style>
+        [data-reveal],
+        [data-reveal] [aria-hidden] span {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style>
+    </noscript>
   </head>
   <body>
     <noscript>

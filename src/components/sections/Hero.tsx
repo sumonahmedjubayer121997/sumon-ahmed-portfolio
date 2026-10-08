@@ -1,6 +1,7 @@
-import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { site } from '@/content';
-import { budget } from '@/lib/device';
+import { useIsHydrating } from '@/lib/hydration';
+import { useBudget } from '@/hooks/useDevice';
 import type { HeroBand } from '@/lib/heroStructure';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import { useCursorRepulsion } from '@/hooks/useCursorRepulsion';
@@ -15,10 +16,10 @@ const loadHeroScene = () => import('@/three/HeroScene');
 const delay = (s: number, y?: number) => ({ '--d': `${s}s`, ...(y ? { '--intro-y': `${y}px` } : {}) }) as CSSProperties;
 
 /**
- * The static first-paint shell in index.html starts the same CSS intro at first
- * contentful paint. Offsetting React's animations by the time elapsed since then
- * lets the hydrated hero continue mid-animation instead of restarting. On later
- * client-side visits the offset is large, so the hero simply appears.
+ * The prerendered hero plays its CSS intro from first paint, and hydration keeps
+ * those DOM nodes, so the animation simply continues. When the hero mounts later
+ * (navigating back to the homepage), offset the intro by the time since first
+ * paint so it appears settled instead of replaying.
  */
 function introOffset() {
   const fcp = performance.getEntriesByName('first-contentful-paint')[0]?.startTime;
@@ -26,10 +27,11 @@ function introOffset() {
 }
 
 /**
- * The shell paints the statement without animation so it can be the largest
- * contentful paint. If the shell was shown, keep it static here too.
+ * The statement is the largest contentful paint, so the prerendered page paints
+ * it without animation. It only fades in on a page's very first paint in dev
+ * (where nothing is prerendered).
  */
-const shellWasPainted = () => performance.getEntriesByName('first-contentful-paint').length > 0;
+const paintedBefore = () => performance.getEntriesByName('first-contentful-paint').length > 0;
 
 function NameLine({ text, start }: { text: string; start: number }) {
   return (
@@ -65,18 +67,17 @@ function DriftTag({ children }: { children: ReactNode }) {
 
 export function Hero() {
   const compact = useIsMobile();
-  const count = useMemo(() => {
-    const n = budget({ high: 680, mid: 440, low: 240 });
-    return compact ? Math.min(n, 280) : n;
-  }, [compact]);
+  const n = useBudget({ high: 680, mid: 440, low: 240 });
+  const count = compact ? Math.min(n, 280) : n;
   const [first, ...restOfName] = site.name.toUpperCase().split(' ');
   const last = restOfName.join(' ');
   const sectionRef = useRef<HTMLElement>(null);
   const rolesRef = useRef<HTMLDivElement>(null);
   const statementRef = useRef<HTMLParagraphElement>(null);
   const [band, setBand] = useState<HeroBand | null>(null);
-  const [t0] = useState(introOffset);
-  const [staticStatement] = useState(shellWasPainted);
+  const hydrating = useIsHydrating();
+  const [t0] = useState(() => (hydrating ? 0 : introOffset()));
+  const [staticStatement] = useState(() => hydrating || paintedBefore());
 
   // Fit the simulation's structure into the whitespace between the roles and the statement.
   useLayoutEffect(() => {

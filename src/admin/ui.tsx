@@ -153,7 +153,7 @@ export function TextInput({
   id: string;
   value: string;
   onChange: (v: string) => void;
-  type?: 'text' | 'email' | 'url';
+  type?: 'text' | 'email' | 'url' | 'date';
   placeholder?: string;
   readOnly?: boolean;
 }) {
@@ -175,11 +175,14 @@ export function TextArea({
   value,
   onChange,
   rows = 4,
+  mono,
 }: {
   id: string;
   value: string;
   onChange: (v: string) => void;
   rows?: number;
+  /** Monospace, for Markdown and code. */
+  mono?: boolean;
 }) {
   return (
     <textarea
@@ -187,7 +190,7 @@ export function TextArea({
       value={value}
       rows={rows}
       onChange={(e) => onChange(e.target.value)}
-      className={cn(inputClass, 'resize-y leading-relaxed')}
+      className={cn(inputClass, 'resize-y leading-relaxed', mono && 'font-mono text-[0.85rem]')}
     />
   );
 }

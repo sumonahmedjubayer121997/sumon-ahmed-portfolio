@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { prefersReducedMotion } from './device';
+import { prerendered } from './hydration';
 
 export type NavTheme = 'light' | 'dark';
 export type TransitionPhase = 'idle' | 'out' | 'in';
@@ -22,7 +23,8 @@ interface UIState {
 }
 
 export const useUI = create<UIState>()((set) => ({
-  reducedMotion: typeof window !== 'undefined' ? prefersReducedMotion() : false,
+  // Hydration must match the prerendered (full-motion) markup; useReducedMotionSync applies the real value.
+  reducedMotion: !prerendered && typeof window !== 'undefined' && prefersReducedMotion(),
   navTheme: 'light',
   activeSection: null,
   menuOpen: false,
