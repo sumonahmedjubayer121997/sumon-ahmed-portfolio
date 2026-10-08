@@ -5,9 +5,12 @@ import {
   getDoc,
   getDocs,
   limit,
+  orderBy,
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
+  where,
   writeBatch,
 } from 'firebase/firestore/lite';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
@@ -276,3 +279,44 @@ export async function uploadCv(file: File, name: string): Promise<string> {
 }
 
 export const removeCv = () => removeDoc(collections.cv.path, collections.cv.id);
+
+/* ───────────────────────── Messages (contact form) ───────────────────────── */
+
+export type MessageStatus = 'new' | 'read' | 'spam';
+
+export interface Message {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  status: MessageStatus;
+  page?: string;
+  createdAt: Date | null;
+}
+
+/** Newest first (the 200 most recent). */
+export async function loadMessages(): Promise<Message[]> {
+  const snap = await getDocs(query(collection(firebase().db, 'messages'), orderBy('createdAt', 'desc'), limit(200)));
+  return snap.docs.map((d) => {
+    const m = d.data() as Omit<Message, 'id' | 'createdAt'> & { createdAt?: { toDate(): Date } };
+    return {
+      id: d.id,
+      name: m.name,
+      email: m.email,
+      message: m.message,
+      status: m.status,
+      page: m.page,
+      createdAt: m.createdAt?.toDate() ?? null,
+    };
+  });
+}
+
+export async function countNewMessages() {
+  return (await getDocs(query(collection(firebase().db, 'messages'), where('status', '==', 'new'), limit(100)))).size;
+}
+
+/** Only the status may change (firestore.rules). */
+export const setMessageStatus = (id: string, status: MessageStatus) =>
+  updateDoc(doc(firebase().db, 'messages', id), { status });
+
+export const deleteMessage = (id: string) => deleteDoc(doc(firebase().db, 'messages', id));

@@ -47,6 +47,11 @@ through `src/content/index.ts`.
 - **CV and availability** — Profile → _CV and availability_: upload a PDF (up to 700 KB; stored in `site/cv`, written to
   `/cv/<name>.pdf` by each build, so no Storage bucket is needed) or paste a link. A "Download CV" button then appears in
   the hero, contact section, menu and blog author box; the "Available" line can be switched off.
+- **Contact form** — messages go to Firestore `messages/{id}`: anyone may create one, only admins read, triage
+  (new / read / spam) and delete them in `/admin` → Messages (unread count in the sidebar). Spam checks, enforced by
+  `firestore.rules`: an empty honeypot field, ≥ 3 s on the form, length and email checks, at most 3 links, a server
+  timestamp; plus one message per browser per minute. The Firebase SDK loads only once someone starts typing. Email
+  alerts and stronger bot protection (App Check) are the next step and need the Blaze plan.
 - **Drafts and scheduling** — _Published_ off keeps a post out of the build; a future date holds it back until the first
   build on or after that date. Set _Last updated_ when you revise a published post.
 - The AI Lab / Method copy and navigation stay in `src/data/` (structural, not content).
@@ -75,7 +80,8 @@ a project set up before blog posts moved to Firestore), the overview offers to i
    content and start replacing placeholders.
 
 Security model (see `firestore.rules`, `storage.rules`): published content is publicly readable (it's on the website
-anyway); drafts, writes and uploads require an `admins/{uid}` document; assistant logs and messages are server-only.
+anyway); drafts, writes and uploads require an `admins/{uid}` document; contact messages are create-only for visitors
+and readable by admins only; assistant logs are server-only.
 
 ---
 

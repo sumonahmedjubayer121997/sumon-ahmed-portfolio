@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import { copyText } from '@/lib/clipboard';
+import { contactAvailable } from '@/lib/contact';
+import { ContactForm } from './ContactForm';
 import { site } from '@/content';
 import { OpenToWork, cv } from '@/components/ui/Availability';
 import { useMagneticInteraction } from '@/hooks/useMagneticInteraction';
@@ -82,6 +84,18 @@ export function ContactSection() {
             </span>
           </div>
         </div>
+
+        {contactAvailable && (
+          <div className="relative mt-20 grid gap-10 md:mt-24 md:grid-cols-12">
+            <div className="md:col-span-4">
+              <p className="t-label text-ash">Or write here</p>
+              <p className="mt-3 max-w-[32ch] text-[1.05rem] leading-relaxed text-bone/80">
+                Messages from this form come straight to me, and I read every one.
+              </p>
+            </div>
+            <ContactForm className="md:col-span-8" />
+          </div>
+        )}
 
         <div className="mt-24 grid gap-10 border-t border-[var(--line)] pt-8 md:grid-cols-12">
           <div className="md:col-span-4">
