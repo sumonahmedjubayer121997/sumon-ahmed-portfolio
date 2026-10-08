@@ -10,6 +10,7 @@ import { ScrollManager } from './components/layout/ScrollManager';
 import HomePage from './pages/HomePage';
 
 const ProjectPage = lazy(() => import('./pages/ProjectPage'));
+const BlogIndexPage = lazy(() => import('./pages/BlogIndexPage'));
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 /** The private content studio — its own chunk (Firebase SDK, zod), never loaded by visitors. */
@@ -51,6 +52,7 @@ function Site() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/work/:slug" element={<ProjectPage />} />
+              <Route path="/blog" element={<BlogIndexPage />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

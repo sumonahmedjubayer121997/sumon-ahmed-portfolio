@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react';
-import { postDemoLabels, type Block, type PostDemoKind } from '@/content/markdown';
+import type { MouseEvent, ReactNode } from 'react';
+import { postDemoLabels, type Block, type CalloutKind, type PostDemoKind } from '@/content/markdown';
 import { TransitionLink } from '@/components/ui/TransitionLink';
+import { scrollToId } from '@/hooks/useTransitionNavigate';
+import { cn } from '@/lib/cn';
 
 const INLINE = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*\s][^*]*\*)|(\[[^\]]+\]\([^)\s]+\))/g;
 
@@ -47,10 +49,51 @@ function Inline({ text, preview }: { text: string; preview?: boolean }) {
   return <>{out}</>;
 }
 
+/** Scrolls to a section and puts its address in the URL, so it can be shared. */
+export function jumpToHeading(e: MouseEvent<HTMLAnchorElement>, id: string) {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  e.preventDefault();
+  history.replaceState(history.state, '', `#${id}`);
+  scrollToId(id);
+}
+
+/** A section heading with a "#" link that appears on hover or focus. */
+function Heading({ level, id, text, preview }: { level: 2 | 3; id: string; text: string; preview?: boolean }) {
+  const Tag = level === 2 ? 'h2' : 'h3';
+  return (
+    <Tag
+      id={id}
+      className={cn(
+        'group scroll-mt-[calc(var(--nav-h)+2rem)] text-ink',
+        level === 2 ? 't-h3 mt-16' : 'mt-12 text-[1.35rem] font-medium leading-snug tracking-[-0.02em]',
+      )}
+    >
+      {text}
+      {!preview && (
+        <a
+          href={`#${id}`}
+          onClick={(e) => jumpToHeading(e, id)}
+          className="ml-3 inline-block align-middle text-[0.7em] text-muted opacity-0 transition-opacity hover:text-accent focus-visible:opacity-100 group-hover:opacity-100"
+          aria-label={`Link to section: ${text}`}
+        >
+          #
+        </a>
+      )}
+    </Tag>
+  );
+}
+
+const CALLOUT: Record<CalloutKind, { label: string; className: string }> = {
+  note: { label: 'Note', className: 'border-ink' },
+  tip: { label: 'Tip', className: 'border-accent' },
+  warning: { label: 'Warning', className: 'border-accent-ink bg-accent/[0.06]' },
+};
+
 /**
  * Renders a parsed post. The site passes `renderDemo` for the live demos; the
  * admin preview (`preview`) shows labelled stand-ins instead and opens links in
- * a new tab.
+ * a new tab. Code arrives highlighted from the build (`html`); the preview shows
+ * it plain.
  */
 export function PostBody({
   blocks,
@@ -72,11 +115,8 @@ export function PostBody({
               </p>
             );
           case 'h2':
-            return (
-              <h2 key={i} className="t-h3 mt-16 text-ink">
-                {b.text}
-              </h2>
-            );
+          case 'h3':
+            return <Heading key={i} level={b.type === 'h2' ? 2 : 3} id={b.id} text={b.text} preview={preview} />;
           case 'code':
             return (
               <pre
@@ -85,7 +125,7 @@ export function PostBody({
                 tabIndex={0}
                 aria-label={`${b.lang} code example`}
               >
-                <code>{b.code}</code>
+                {b.html ? <code dangerouslySetInnerHTML={{ __html: b.html }} /> : <code>{b.code}</code>}
               </pre>
             );
           case 'formula':
@@ -94,16 +134,56 @@ export function PostBody({
                 {b.text}
               </p>
             );
-          case 'list':
+          case 'list': {
+            const List = b.ordered ? 'ol' : 'ul';
             return (
-              <ul key={i} className="mt-6 space-y-3">
+              <List key={i} className={cn('mt-6 space-y-3', b.ordered && 'list-decimal pl-6 marker:text-muted')}>
                 {b.items.map((item, j) => (
-                  <li key={j} className="relative pl-7 text-[1.075rem] leading-relaxed text-ink-2">
-                    <span className="absolute left-0 top-[0.8em] h-px w-4 bg-ink" aria-hidden="true" />
+                  <li
+                    key={j}
+                    className={cn('text-[1.075rem] leading-relaxed text-ink-2', !b.ordered && 'relative pl-7')}
+                  >
+                    {!b.ordered && <span className="absolute left-0 top-[0.8em] h-px w-4 bg-ink" aria-hidden="true" />}
                     <Inline text={item} preview={preview} />
                   </li>
                 ))}
-              </ul>
+              </List>
+            );
+          }
+          case 'callout':
+            return (
+              <aside
+                key={i}
+                aria-label={CALLOUT[b.kind].label}
+                className={cn('mt-8 border-l-2 bg-paper/50 px-5 py-4', CALLOUT[b.kind].className)}
+              >
+                <p className="t-label text-[10px] text-ink">{CALLOUT[b.kind].label}</p>
+                <p className="mt-2 text-[1.02rem] leading-relaxed text-ink-2">
+                  <Inline text={b.text} preview={preview} />
+                </p>
+              </aside>
+            );
+          case 'quote':
+            return (
+              <blockquote
+                key={i}
+                className="mt-10 border-l border-ink pl-6 text-[clamp(1.3rem,2.2vw,1.6rem)] leading-snug tracking-[-0.02em] text-ink"
+              >
+                <Inline text={b.text} preview={preview} />
+              </blockquote>
+            );
+          case 'image':
+            return (
+              <figure key={i} className="my-10">
+                <img
+                  src={b.src}
+                  alt={b.alt}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full border border-[var(--line)] bg-paper"
+                />
+                {b.caption && <figcaption className="t-meta mt-3 text-[12px] text-muted">{b.caption}</figcaption>}
+              </figure>
             );
           case 'demo':
             return renderDemo && !preview ? (

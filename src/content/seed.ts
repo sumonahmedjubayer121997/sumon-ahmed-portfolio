@@ -97,6 +97,7 @@ export function seedContent() {
     ...p,
     tags: [...p.tags],
     body: p.body.trim(),
+    updated: '',
     order: i,
     published: true,
     placeholders: ['body'],

@@ -36,10 +36,16 @@ through `src/content/index.ts`.
   studio overview lists everything still flagged; editing a field (or "Mark as real") clears it.
 - **Evaluation figures** — add confusion matrices and precision–recall curves from your real numbers (paste straight
   from a spreadsheet or `sklearn` output), or upload images to Storage. They render as accessible charts on project pages.
-- **Blog posts** are written in the studio in a small Markdown dialect (`src/content/markdown.ts`: headings, lists, code,
-  `$$ formulas $$`, links and `<Demo kind="tfidf" />` for live demos) with a live preview. The syntax is MDX-compatible.
-  Invalid posts (an unclosed code block, an unknown demo) can't be saved and fail the build.
-- **Drafts** — anything with _Published_ off stays in Firestore but is left out of the build.
+- **Blog posts** are written in the studio in a small Markdown dialect (`src/content/markdown.ts`: `##`/`###`
+  headings, bullet and numbered lists, code, `$$ formulas $$`, `> [!NOTE]` / `[!TIP]` / `[!WARNING]` callouts, quotes,
+  `![alt](https://…)` images, links and `<Demo kind="tfidf" />` for live demos) with a live preview. The syntax is
+  MDX-compatible. Invalid posts (an unclosed code block, an unknown demo, an image without alt text) can't be saved and
+  fail the build.
+- **At build time** each post is parsed and its code highlighted (shiki, colours adjusted to 4.5:1 contrast) into
+  `src/generated/posts.json`, loaded only by the post page. The site gets `/blog` (all notes, filterable by tag),
+  `/rss.xml`, a table of contents for posts with 3+ sections, heading links, share buttons and related notes.
+- **Drafts and scheduling** — _Published_ off keeps a post out of the build; a future date holds it back until the first
+  build on or after that date. Set _Last updated_ when you revise a published post.
 - The AI Lab / Method copy and navigation stay in `src/data/` (structural, not content).
 
 ### Try it locally (Firebase Emulator Suite — no real project needed)

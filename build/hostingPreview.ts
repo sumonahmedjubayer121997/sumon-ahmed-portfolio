@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 
@@ -20,7 +20,8 @@ export function hostingPreview(): Plugin {
           req.url = '/app.html';
           return next();
         }
-        if (path === '/' || existsSync(join(dist, path))) return next();
+        const file = join(dist, path);
+        if (path === '/' || (existsSync(file) && statSync(file).isFile())) return next();
         if (!extname(path) && existsSync(join(dist, `${path}.html`))) {
           req.url = `${path}.html${url.search}`;
           return next();

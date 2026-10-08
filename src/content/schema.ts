@@ -150,13 +150,18 @@ export const researchSchema = z.object({
   placeholders,
 });
 
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+
 export const postSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers and dashes only'),
     index: z.string().min(1),
     title: z.string().min(1),
     excerpt: z.string().min(1, 'One sentence shown in the list and in link previews'),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD'),
+    /** Publication date. A future date schedules the post: builds leave it out until then. */
+    date: isoDate,
+    /** Set when a published post is revised (shown as "Updated …"). */
+    updated: z.union([isoDate, z.literal('')]).default(''),
     tags: z.array(z.string().min(1)),
     /** Markdown — see src/content/markdown.ts for the supported syntax. */
     body: z.string().trim().min(1, 'Write the post'),
@@ -168,13 +173,30 @@ export const postSchema = z
     for (const message of parseMarkdown(p.body).errors) ctx.addIssue({ code: 'custom', path: ['body'], message });
   });
 
+/**
+ * What the site bundle carries per post: everything but the body, which is
+ * parsed and highlighted at build time into src/generated/posts.json and loaded
+ * only by the post page.
+ */
+export const postMetaSchema = z.object({
+  slug: z.string(),
+  index: z.string(),
+  title: z.string(),
+  excerpt: z.string(),
+  date: isoDate,
+  updated: z.string(),
+  tags: z.array(z.string()),
+  order: z.number(),
+  readingTime: z.string(),
+});
+
 export const contentBundleSchema = z.object({
   site: siteSchema,
   projects: z.array(projectSchema),
   experience: z.array(milestoneSchema),
   skills: z.array(skillGroupSchema),
   research: researchSchema,
-  posts: z.array(postSchema),
+  posts: z.array(postMetaSchema),
   meta: z.object({
     source: z.enum(['firestore', 'seed']),
     pulledAt: z.string(),
@@ -190,6 +212,7 @@ export type Milestone = z.output<typeof milestoneSchema>;
 export type SkillGroup = z.output<typeof skillGroupSchema>;
 export type Research = z.output<typeof researchSchema>;
 export type Post = z.output<typeof postSchema>;
+export type PostMeta = z.output<typeof postMetaSchema>;
 export type ContentBundle = z.output<typeof contentBundleSchema>;
 export type ConceptId = (typeof conceptIds)[number];
 export type PreviewKind = (typeof previewKinds)[number];

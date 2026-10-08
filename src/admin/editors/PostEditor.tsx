@@ -27,6 +27,7 @@ const template = (): Post => ({
   title: '',
   excerpt: '',
   date: new Date().toISOString().slice(0, 10),
+  updated: '',
   tags: [],
   body: '',
   order: 99,
@@ -35,14 +36,21 @@ const template = (): Post => ({
 });
 
 const SYNTAX: Array<[string, string]> = [
-  ['## Heading', 'section heading'],
+  ['## Heading', 'section (3 or more make a table of contents)'],
+  ['### Subheading', 'subsection'],
   ['**bold**  *italic*  `code`', 'inline'],
   ['[label](/work/rag-system)', 'link (site path or full URL)'],
-  ['- item', 'list'],
-  ['~~~python … ~~~', 'code block (``` also works)'],
+  ['- item', 'bullet list'],
+  ['1. item', 'numbered list'],
+  ['~~~python … ~~~', 'code block, highlighted on the site (``` also works)'],
   ['$$ a · b $$', 'formula'],
+  ['> [!NOTE] text', 'callout ([!TIP] and [!WARNING] too)'],
+  ['> text', 'quote'],
+  ['![What it shows](https://…/image.png "Caption")', 'image (describe it for screen readers)'],
   [`<Demo kind="tfidf" />`, `live demo: ${postDemoKinds.join(', ')}`],
 ];
+
+const today = () => new Date().toISOString().slice(0, 10);
 
 export default function PostEditor() {
   const { slug = '' } = useParams();
@@ -124,9 +132,29 @@ export default function PostEditor() {
                 <Field label="Number" hint="e.g. 04" error={issueFor(ed.issues, 'index')}>
                   {(id) => <TextInput id={id} value={d.index} onChange={(v) => ed.edit((x) => void (x.index = v))} />}
                 </Field>
-                <Field label="Date" error={issueFor(ed.issues, 'date')}>
+                <Field
+                  label="Date"
+                  hint={
+                    d.date > today() ? 'Scheduled: appears with the first publish on or after this date.' : undefined
+                  }
+                  error={issueFor(ed.issues, 'date')}
+                >
                   {(id) => (
                     <TextInput id={id} type="date" value={d.date} onChange={(v) => ed.edit((x) => void (x.date = v))} />
+                  )}
+                </Field>
+                <Field
+                  label="Last updated"
+                  hint="Optional — set it when you revise a published post."
+                  error={issueFor(ed.issues, 'updated')}
+                >
+                  {(id) => (
+                    <TextInput
+                      id={id}
+                      type="date"
+                      value={d.updated ?? ''}
+                      onChange={(v) => ed.edit((x) => void (x.updated = v))}
+                    />
                   )}
                 </Field>
                 <Field label="Order" hint="Lower comes first.">

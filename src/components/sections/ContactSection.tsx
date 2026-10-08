@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { copyText } from '@/lib/clipboard';
 import { site } from '@/content';
 import { useMagneticInteraction } from '@/hooks/useMagneticInteraction';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -39,13 +40,12 @@ function MagneticEmail() {
 export function ContactSection() {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(site.email);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
+    if (!(await copyText(site.email))) {
       window.location.href = `mailto:${site.email}`;
+      return;
     }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
   };
 
   return (

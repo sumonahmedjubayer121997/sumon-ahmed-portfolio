@@ -4,40 +4,45 @@
  * any JavaScript runs. React then hydrates the markup in the browser.
  *
  * Writes, into dist/:
- *   index.html, work/<slug>.html, blog/<slug>.html, 404.html   prerendered pages
+ *   index.html, work/<slug>.html, blog.html, blog/<slug>.html, 404.html   prerendered pages
  *   app.html        empty client shell for routes that aren't prerendered (/admin)
  *   og/*.png        Open Graph images
- *   sitemap.xml, robots.txt
+ *   sitemap.xml, robots.txt, rss.xml
  *
- * SITE_URL (env or .env.production) sets canonical and Open Graph URLs.
+ * VITE_SITE_URL (.env.production; the client uses it for share links) sets
+ * canonical, Open Graph, sitemap and feed URLs. SITE_URL in the environment
+ * overrides it.
  */
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadEnv } from 'vite';
 import { createOgRenderer, type OgCard } from './og';
-import type { Post, Project, Research, Site, SkillGroup } from '../src/content/schema';
+import type { PostMeta, Project, Research, Site, SkillGroup } from '../src/content/schema';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = resolve(root, 'dist');
 const ssrDir = resolve(root, 'dist-ssr');
-const env = { ...loadEnv('production', root, ['SITE_']), ...process.env };
-const SITE_URL = (env.SITE_URL || 'https://sumonahmed.web.app').replace(/\/+$/, '');
+const env = { ...loadEnv('production', root, ['SITE_', 'VITE_SITE_']), ...process.env };
+const SITE_URL = (env.SITE_URL || env.VITE_SITE_URL || 'https://sumonahmed.web.app').replace(/\/+$/, '');
 
 /** What src/entry-server.tsx exports (it's bundled for Node by the SSR build). */
 interface ServerModule {
   render(url: string): Promise<string>;
   site: Site;
   projects: Project[];
-  posts: Array<Post & { readingTime: string }>;
+  posts: PostMeta[];
+  postsByDate: PostMeta[];
+  postTags: string[];
   research: Research;
   skillGroups: SkillGroup[];
   pageTitle(title?: string): string;
   siteTitle: string;
+  BLOG_DESCRIPTION: string;
 }
 
 const server: ServerModule = await import(pathToFileURL(resolve(ssrDir, 'entry-server.js')).href);
-const { render, site, projects, posts, research, skillGroups, pageTitle, siteTitle } = server;
+const { render, site, projects, posts, postsByDate, postTags, research, skillGroups, pageTitle, siteTitle } = server;
 
 /* ───────────────────────── Helpers ───────────────────────── */
 
@@ -146,6 +151,35 @@ const routes: Route[] = [
       ...(p.repoUrl || p.liveUrl ? { sameAs: [p.repoUrl, p.liveUrl].filter(Boolean) } : {}),
     },
   })),
+  {
+    path: '/blog',
+    file: 'blog.html',
+    title: pageTitle('Writing'),
+    description: server.BLOG_DESCRIPTION,
+    type: 'website',
+    chunk: 'src/pages/BlogIndexPage.tsx',
+    image: 'blog',
+    card: {
+      kicker: `Writing · ${posts.length} ${posts.length === 1 ? 'note' : 'notes'}`,
+      title: 'Notes from first principles.',
+      emphasis: 'principles.',
+      footer: `${host}/blog`,
+      tags: postTags,
+    },
+    ld: {
+      '@context': 'https://schema.org',
+      '@type': 'Blog',
+      name: `${site.name} — Writing`,
+      description: server.BLOG_DESCRIPTION,
+      url: `${SITE_URL}/blog`,
+      author: { '@type': 'Person', ...person, name: site.name, url: `${SITE_URL}/` },
+      blogPost: postsByDate.map((p) => ({
+        '@type': 'BlogPosting',
+        headline: p.title,
+        url: `${SITE_URL}/blog/${p.slug}`,
+      })),
+    },
+  },
   ...posts.map((p): Route => ({
     path: `/blog/${p.slug}`,
     file: `blog/${p.slug}.html`,
@@ -155,6 +189,7 @@ const routes: Route[] = [
     chunk: 'src/pages/BlogPostPage.tsx',
     extraMeta:
       `<meta property="article:published_time" content="${esc(p.date)}" />` +
+      (p.updated ? `<meta property="article:modified_time" content="${esc(p.updated)}" />` : '') +
       p.tags.map((t) => `<meta property="article:tag" content="${esc(t)}" />`).join(''),
     image: `blog-${p.slug}`,
     card: {
@@ -169,7 +204,7 @@ const routes: Route[] = [
       headline: p.title,
       description: p.excerpt,
       datePublished: p.date,
-      dateModified: p.date,
+      dateModified: p.updated || p.date,
       url: `${SITE_URL}/blog/${p.slug}`,
       mainEntityOfPage: `${SITE_URL}/blog/${p.slug}`,
       image: `${SITE_URL}/og/blog-${p.slug}.png`,
@@ -262,7 +297,12 @@ for (const r of routes) {
 
 const today = new Date().toISOString().slice(0, 10);
 const indexable = routes.filter((r) => !r.noindex);
-const lastmod = (r: Route) => posts.find((p) => `/blog/${p.slug}` === r.path)?.date ?? today;
+const newest = postsByDate[0];
+const lastmod = (r: Route) => {
+  if (r.path === '/blog') return newest ? newest.updated || newest.date : today;
+  const post = posts.find((p) => `/blog/${p.slug}` === r.path);
+  return post ? post.updated || post.date : today;
+};
 write(
   'sitemap.xml',
   `<?xml version="1.0" encoding="UTF-8"?>
@@ -281,5 +321,36 @@ Sitemap: ${SITE_URL}/sitemap.xml
 `,
 );
 
+/* ───────────────────────── RSS ───────────────────────── */
+
+const xml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const rfc822 = (iso: string) => new Date(`${iso}T09:00:00Z`).toUTCString();
+write(
+  'rss.xml',
+  `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>${xml(`${site.name} — Writing`)}</title>
+    <link>${SITE_URL}/blog</link>
+    <description>${xml(server.BLOG_DESCRIPTION)}</description>
+    <language>en-gb</language>
+    <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml" />
+${newest ? `    <lastBuildDate>${rfc822(newest.updated || newest.date)}</lastBuildDate>\n` : ''}${postsByDate
+    .map(
+      (p) => `    <item>
+      <title>${xml(p.title)}</title>
+      <link>${SITE_URL}/blog/${p.slug}</link>
+      <guid isPermaLink="true">${SITE_URL}/blog/${p.slug}</guid>
+      <pubDate>${rfc822(p.date)}</pubDate>
+      <description>${xml(p.excerpt)}</description>
+${p.tags.map((t) => `      <category>${xml(t)}</category>`).join('\n')}
+    </item>`,
+    )
+    .join('\n')}
+  </channel>
+</rss>
+`,
+);
+
 rmSync(ssrDir, { recursive: true, force: true });
-console.log(`[prerender] ${routes.length} pages, ${ogDone.size} images, sitemap for ${SITE_URL}`);
+console.log(`[prerender] ${routes.length} pages, ${ogDone.size} images, sitemap + RSS for ${SITE_URL}`);
