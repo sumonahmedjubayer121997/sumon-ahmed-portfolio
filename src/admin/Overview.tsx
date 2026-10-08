@@ -21,7 +21,7 @@ import {
   type ContentPart,
   type StarterUpdate,
 } from './data';
-import { firebaseEnv } from './firebase';
+import { PublishPanel } from './PublishPanel';
 import { Badge, Button, Panel } from './ui';
 import { PageHeader } from './editors/common';
 
@@ -99,6 +99,7 @@ export default function Overview() {
         description="Edit what the portfolio shows. Changes are saved to Firestore; the public site picks them up on the next build."
       />
       <div className="grid gap-6">
+        {state !== 'empty' && <PublishPanel />}
         {state === 'loading' && <p className="t-label text-muted">Loading…</p>}
         {state === 'error' && (
           <p className="text-[#8f1d17]" role="alert">
@@ -173,23 +174,6 @@ export default function Overview() {
             )}
           </Panel>
         )}
-
-        <Panel
-          title="Publishing"
-          description={
-            <>
-              The public site is static: content is pulled from Firestore when the site is built, so visitors never wait
-              on the database. A one-click Publish button (which triggers the build and deploy) arrives with the CI
-              pipeline. Until then, run <code className="font-mono text-[0.85em]">npm run build</code> to rebuild with
-              the latest content.
-            </>
-          }
-        >
-          <p className="t-label text-[10px] text-muted">
-            Project · {firebaseEnv?.projectId}
-            {firebaseEnv?.useEmulators && ' · local emulator'}
-          </p>
-        </Panel>
       </div>
     </>
   );

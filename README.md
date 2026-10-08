@@ -182,9 +182,26 @@ Never read `window`, `navigator` or `performance` during render.
 - Lighthouse in a headless/CI environment renders WebGL in software (SwiftShader), which inflates Total Blocking Time.
   Measure on a real device for representative numbers.
 
-## Deployment
+## Publishing and deployment
 
-Firebase Hosting, site `sumonahmed` (https://sumonahmed.web.app):
+Firebase Hosting, site `sumonahmed` (https://sumonahmed.web.app). `.github/workflows/deploy.yml` builds from Firestore
+(`CONTENT_SOURCE=firestore`, so placeholder content can never ship) and deploys. It runs when you press **Publish now**
+in `/admin`, on every push to `main`, and daily at 05:30 UTC (scheduled posts appear on their day). Pull requests run
+`.github/workflows/checks.yml`: formatting, type-check and the full build.
+
+One-time setup for the Publish button:
+
+1. In the project folder run `npx firebase init hosting:github` — it signs in to GitHub and stores the deploy key as the
+   repository secret `FIREBASE_SERVICE_ACCOUNT_PORTFOLIOCLAUDE_1C692`. Answer _No_ to both workflow questions (the
+   project has its own); if it writes `firebase-hosting-*.yml` files, delete them.
+2. Create a [fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new): only this repository,
+   permission _Actions: Read and write_.
+3. Paste it in `/admin` → Overview → Publishing. It is stored in `site/publish`, which only admins can read, and is
+   never part of the public site.
+
+Until the deploy key exists, the workflow still builds (and fails on invalid content) but skips the deploy.
+
+Manual deploy, from your machine:
 
 ```bash
 npm run build
@@ -192,6 +209,5 @@ npx firebase deploy --only hosting
 ```
 
 `firebase.json` serves the prerendered files with clean URLs, sends unknown paths to `404.html` with a real 404
-status, rewrites `/admin` to the client-only `app.html`, marks HTML `no-cache` and hashed assets immutable. Content
-edits in `/admin` appear after the next build + deploy. For Google sign-in on the live `/admin`, add the site's domain
-under Firebase Authentication → Settings → Authorized domains.
+status, rewrites `/admin` to the client-only `app.html`, marks HTML `no-cache` and hashed assets immutable. For Google
+sign-in on the live `/admin`, add the site's domain under Firebase Authentication → Settings → Authorized domains.
