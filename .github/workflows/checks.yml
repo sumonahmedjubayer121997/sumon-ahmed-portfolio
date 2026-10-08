@@ -22,5 +22,11 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      # The embedding map's model (all-MiniLM-L6-v2, ~23 MB) and cached layouts.
+      - uses: actions/cache@v4
+        with:
+          path: node_modules/.cache
+          key: content-cache-${{ hashFiles('scripts/content/embed.ts') }}
       - run: npm run format:check
       - run: npm run build

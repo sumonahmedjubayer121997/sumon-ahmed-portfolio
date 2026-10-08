@@ -10,6 +10,9 @@ import {
 import { concepts, projects, type Concept, type Project } from '@/content';
 import { cn } from '@/lib/cn';
 import { palette, rgba } from '@/lib/color';
+import { drawLab, labActive } from '@/lib/labOverlay';
+import { labWorlds } from '@/lib/telemetry';
+import { useUI } from '@/lib/store';
 import { createRandom } from '@/lib/random';
 import { flowAngle } from '@/physics/noise';
 import { PhysicsWorld } from '@/physics/world';
@@ -270,9 +273,20 @@ function SystemStage({ hovered, onHover }: { hovered: string | null; onHover: (s
         dust.y[i] += dust.vy[i] * step;
         ctx.fillRect(dust.x[i] - 0.75, dust.y[i] - 0.75, 1.5, 1.5);
       }
+      if (labActive()) drawLab(ctx, w);
     },
     [size, dust],
   );
+
+  // Lab mode: redraw at once when it's toggled (the world may be asleep), and report counts to the HUD.
+  const labMode = useUI((s) => s.labMode);
+  useEffect(() => {
+    if (size.width) render(world, 0, 0);
+  }, [labMode, size, world, render]);
+  useEffect(() => {
+    labWorlds.set('Project system', () => ({ bodies: world.bodies.length, links: world.links.length }));
+    return () => void labWorlds.delete('Project system');
+  }, [world]);
 
   const { drag } = usePhysicsWorld(world, stageRef, {
     enabled: !reduced && size.width > 0,

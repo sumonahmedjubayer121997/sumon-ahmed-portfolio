@@ -9,6 +9,9 @@ import {
 } from 'react';
 import { skillGroups } from '@/content';
 import { palette, rgba } from '@/lib/color';
+import { drawLab, labActive } from '@/lib/labOverlay';
+import { labWorlds } from '@/lib/telemetry';
+import { useUI } from '@/lib/store';
 import { createRandom } from '@/lib/random';
 import { cn } from '@/lib/cn';
 import { PhysicsWorld } from '@/physics/world';
@@ -178,9 +181,20 @@ function Ecosystem() {
         ctx.lineTo(b.x, b.y);
         ctx.stroke();
       }
+      if (labActive()) drawLab(ctx, w);
     },
     [size],
   );
+
+  // Lab mode: redraw at once when it's toggled, and report counts to the HUD.
+  const labMode = useUI((s) => s.labMode);
+  useEffect(() => {
+    if (size.width) render(world);
+  }, [labMode, size, world, render]);
+  useEffect(() => {
+    labWorlds.set('Skill system', () => ({ bodies: world.bodies.length, links: world.links.length }));
+    return () => void labWorlds.delete('Skill system');
+  }, [world]);
 
   const { drag } = usePhysicsWorld(world, stageRef, {
     enabled: !reduced && size.width > 0,

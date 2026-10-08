@@ -4,6 +4,7 @@ import { useLocation } from 'react-router';
 import { navItems, site } from '@/content';
 import { cv } from '@/components/ui/Availability';
 import { useUI } from '@/lib/store';
+import { useClientValue } from '@/lib/hydration';
 import { cn } from '@/lib/cn';
 import { springs } from '@/physics/spring';
 import { useSpringPhysics } from '@/hooks/useSpringPhysics';
@@ -55,9 +56,12 @@ export function Navbar() {
           <span className="font-medium tracking-[0.18em]">{site.name}</span>
         </TransitionLink>
 
-        <DesktopLinks active={location.pathname === '/' ? active : null} />
+        <DesktopLinks
+          active={location.pathname === '/' ? active : location.pathname.startsWith('/blog') ? 'blog' : null}
+        />
 
         <div className="flex items-center gap-3">
+          <SearchButton />
           <span className="hidden md:inline-flex">
             <MagneticButton to="/#contact" size="sm" variant="outline" cursor="Say hi">
               Contact
@@ -91,6 +95,37 @@ export function Navbar() {
 
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </header>
+  );
+}
+
+const isApple = () => /Mac|iPhone|iPad/.test(navigator.platform);
+
+/** Opens the command palette; shows the shortcut for this platform (after hydration). */
+function SearchButton() {
+  const openPalette = useUI((s) => s.setPaletteOpen);
+  const shortcut = useClientValue(() => (isApple() ? '⌘K' : 'Ctrl K'), '⌘K');
+  return (
+    <button
+      type="button"
+      onClick={() => openPalette(true)}
+      aria-label="Search the site"
+      aria-keyshortcuts="Meta+K Control+K /"
+      data-cursor="Search"
+      className="t-label flex h-10 items-center gap-2 rounded-full px-2 text-current opacity-80 transition-opacity hover:opacity-100 md:h-9 md:border md:border-[var(--line)] md:px-3"
+    >
+      <svg
+        viewBox="0 0 16 16"
+        className="h-3.5 w-3.5"
+        aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      >
+        <circle cx="7" cy="7" r="4.6" />
+        <path d="m10.5 10.5 3.5 3.5" strokeLinecap="round" />
+      </svg>
+      <kbd className="hidden font-[inherit] text-[10px] md:inline">{shortcut}</kbd>
+    </button>
   );
 }
 

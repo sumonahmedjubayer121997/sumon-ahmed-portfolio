@@ -164,6 +164,26 @@ Never read `window`, `navigator` or `performance` during render.
 - `prefers-reduced-motion`: custom cursor and physics disabled, WebGL replaced by static SVG renders of the same
   scenes, scroll stories become small multiples, page transitions become instant.
 
+### Embedding map (`/map`)
+
+After the content pull, `scripts/content/embed.ts` splits the writing into passages (project overviews and steps, blog
+sections, research, about, experience, skills), embeds each locally with `all-MiniLM-L6-v2` (transformers.js — no API
+key; the ~23 MB model is cached in `node_modules/.cache`), keeps each passage's 3 nearest neighbours by cosine
+similarity, and lays everything out in 3D with a seeded UMAP. The result (`src/generated/embedding-map.json`, cached by
+content hash) is loaded only by `/map`: a WebGL scene you can drag (with momentum), hover and click to pin, plus a
+panel with the exact similarities and a full passage list for keyboards and screen readers. Without WebGL or with
+reduced motion it falls back to a 2D projection. If the model can't be downloaded, the build keeps the previous map.
+
+### Keyboard
+
+| Key                     | Action                                                                                 |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `⌘K` / `Ctrl K`, or `/` | Command palette: jump to any project, note or section; copy email, download CV, RSS    |
+| `D`                     | Lab mode: velocity vectors, springs, collision radii, link strain and a live stats HUD |
+| `↑` `↓` `↵` `Esc`       | Move, open and close inside the palette                                                |
+
+Lab mode is off for reduced-motion users (and its footer switch hidden); the palette and HUD load on first use.
+
 ### Debug switches
 
 | URL parameter          | Effect                                            |
