@@ -9,3 +9,6 @@ export const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://sumonahmed.we
 
 export const BLOG_DESCRIPTION =
   'Notes on data science, machine learning and LLM systems — written to be understood, with working examples where it helps.';
+
+export const MAP_DESCRIPTION =
+  'Every passage of my projects, notes and research, embedded with a small language model and arranged in 3D by meaning.';

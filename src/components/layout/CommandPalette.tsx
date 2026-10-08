@@ -60,6 +60,14 @@ function buildItems(): Item[] {
       run: (go) => go(`/blog/${p.slug}`),
     })),
     { id: 's-home', group: 'Sections', label: 'Home', keywords: 'top start', run: (go) => go('/') },
+    {
+      id: 's-map',
+      group: 'Sections',
+      label: 'Map of ideas',
+      hint: '3D',
+      keywords: 'embedding map umap vectors similarity semantic',
+      run: (go) => go('/map'),
+    },
     ...SECTIONS.map(([id, label, keywords]): Item => ({
       id: `s-${id}`,
       group: 'Sections',

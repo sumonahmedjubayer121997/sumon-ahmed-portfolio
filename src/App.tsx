@@ -14,6 +14,7 @@ import HomePage from './pages/HomePage';
 
 const ProjectPage = lazy(() => import('./pages/ProjectPage'));
 const BlogIndexPage = lazy(() => import('./pages/BlogIndexPage'));
+const MapPage = lazy(() => import('./pages/MapPage'));
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 /** Lab mode's stats panel — loaded the first time Lab mode is turned on. */
@@ -82,6 +83,7 @@ function Site() {
               <Route path="/" element={<HomePage />} />
               <Route path="/work/:slug" element={<ProjectPage />} />
               <Route path="/blog" element={<BlogIndexPage />} />
+              <Route path="/map" element={<MapPage />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

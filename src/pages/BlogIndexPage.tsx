@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { posts, postsByDate, postTags } from '@/content';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { IntroText } from '@/components/ui/IntroText';
+import { TransitionLink } from '@/components/ui/TransitionLink';
 import { BlogRow } from '@/components/sections/BlogSection';
 import { cn } from '@/lib/cn';
 import { BLOG_DESCRIPTION } from '@/lib/meta';
@@ -46,9 +47,14 @@ export default function BlogIndexPage() {
         <IntroText text="Notes from first principles." className="t-h1 mt-6 max-w-[14ch]" />
         <div className="mt-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <p className="t-lead max-w-[52ch] text-ink-2">{BLOG_DESCRIPTION}</p>
-          <a href="/rss.xml" className="t-label link-draw shrink-0 text-muted hover:text-ink">
-            Subscribe via RSS
-          </a>
+          <div className="flex shrink-0 gap-6">
+            <TransitionLink to="/map" className="t-label link-draw text-muted hover:text-ink">
+              Map of ideas
+            </TransitionLink>
+            <a href="/rss.xml" className="t-label link-draw text-muted hover:text-ink">
+              Subscribe via RSS
+            </a>
+          </div>
         </div>
       </header>
 

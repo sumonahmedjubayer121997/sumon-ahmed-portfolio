@@ -30,6 +30,9 @@ export function Footer() {
           <TransitionLink to="/blog" className="t-label link-draw text-bone">
             Writing
           </TransitionLink>
+          <TransitionLink to="/map" className="t-label link-draw text-bone">
+            Map
+          </TransitionLink>
           <a href="/rss.xml" className="t-label link-draw text-bone">
             RSS
           </a>
