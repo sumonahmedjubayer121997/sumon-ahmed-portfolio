@@ -13,7 +13,7 @@
  * canonical, Open Graph, sitemap and feed URLs. SITE_URL in the environment
  * overrides it.
  */
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadEnv } from 'vite';
@@ -320,6 +320,13 @@ Disallow: /admin
 Sitemap: ${SITE_URL}/sitemap.xml
 `,
 );
+
+/* ───────────────────────── CV ───────────────────────── */
+
+// Uploaded in /admin, written by the content pull; served from Hosting like any file.
+const cvSource = resolve(root, 'src/generated/cv');
+rmSync(resolve(dist, 'cv'), { recursive: true, force: true });
+if (existsSync(cvSource)) cpSync(cvSource, resolve(dist, 'cv'), { recursive: true });
 
 /* ───────────────────────── RSS ───────────────────────── */
 

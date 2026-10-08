@@ -8,6 +8,7 @@ import { useCursorRepulsion } from '@/hooks/useCursorRepulsion';
 import { PhysicsCanvas } from '@/components/PhysicsCanvas';
 import { HeroFallback } from '@/components/fallbacks/HeroFallback';
 import { MagneticButton } from '@/components/ui/MagneticButton';
+import { OpenToWork, cv } from '@/components/ui/Availability';
 import { HeroReadout } from './HeroReadout';
 
 const loadHeroScene = () => import('@/three/HeroScene');
@@ -158,6 +159,7 @@ export function Hero() {
           </p>
 
           <div className="intro-fade flex flex-col gap-6 md:col-span-4 md:col-start-9" style={delay(1, 16)}>
+            <OpenToWork className="t-label max-w-[44ch] text-[10px] leading-relaxed text-ink" />
             <p className="max-w-[38ch] text-[0.98rem] leading-relaxed text-ink-2">{site.intro}</p>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <MagneticButton to="/#work" variant="solid" arrow="down" cursor="Explore">
@@ -166,6 +168,11 @@ export function Hero() {
               <MagneticButton to="/#ai-lab" variant="text" arrow="right" cursor="Enter">
                 AI Lab
               </MagneticButton>
+              {cv.url && (
+                <MagneticButton href={cv.url} download={cv.download} variant="text" arrow="down" cursor="CV">
+                  Download CV
+                </MagneticButton>
+              )}
             </div>
           </div>
         </div>

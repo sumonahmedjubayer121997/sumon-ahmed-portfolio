@@ -44,6 +44,9 @@ through `src/content/index.ts`.
 - **At build time** each post is parsed and its code highlighted (shiki, colours adjusted to 4.5:1 contrast) into
   `src/generated/posts.json`, loaded only by the post page. The site gets `/blog` (all notes, filterable by tag),
   `/rss.xml`, a table of contents for posts with 3+ sections, heading links, share buttons and related notes.
+- **CV and availability** — Profile → _CV and availability_: upload a PDF (up to 700 KB; stored in `site/cv`, written to
+  `/cv/<name>.pdf` by each build, so no Storage bucket is needed) or paste a link. A "Download CV" button then appears in
+  the hero, contact section, menu and blog author box; the "Available" line can be switched off.
 - **Drafts and scheduling** — _Published_ off keeps a post out of the build; a future date holds it back until the first
   build on or after that date. Set _Last updated_ when you revise a published post.
 - The AI Lab / Method copy and navigation stay in `src/data/` (structural, not content).

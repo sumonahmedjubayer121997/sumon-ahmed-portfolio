@@ -15,7 +15,7 @@
  * Firestore isn't configured or reachable. CI sets CONTENT_SOURCE=firestore so
  * a deploy can never silently ship placeholder content.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
@@ -36,6 +36,7 @@ import type { ZodType } from 'zod';
 import {
   collections,
   contentBundleSchema,
+  cvFileSchema,
   milestoneSchema,
   postSchema,
   projectSchema,
@@ -43,6 +44,7 @@ import {
   siteSchema,
   skillGroupSchema,
   type ContentBundle,
+  type CvFile,
   type Post,
   type PostMeta,
 } from '../../src/content/schema';
@@ -54,6 +56,8 @@ import { EMULATOR_PORTS, readFirebaseEnv } from '../../src/content/firebaseEnv';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const outFile = resolve(root, 'src/generated/content.json');
 const postsFile = resolve(root, 'src/generated/posts.json');
+/** The uploaded CV is written here; scripts/prerender.ts copies it to dist/cv/. */
+const cvDir = resolve(root, 'src/generated/cv');
 const modeArg = process.argv.indexOf('--mode');
 const mode = modeArg > -1 ? process.argv[modeArg + 1] : 'development';
 const env = loadEnv(mode, root, ['VITE_', 'CONTENT_']);
@@ -61,8 +65,8 @@ const source = (env.CONTENT_SOURCE || 'auto') as 'auto' | 'firestore' | 'seed';
 
 class ContentError extends Error {}
 
-/** Content as stored, with full post bodies (before `finalise`). */
-type RawBundle = Omit<ContentBundle, 'posts'> & { posts: Post[] };
+/** Content as stored, with full post bodies (before `finalise`), plus the uploaded CV if any. */
+type RawBundle = Omit<ContentBundle, 'posts'> & { posts: Post[]; cv: CvFile | null };
 
 function parse<T>(schema: ZodType<T>, data: unknown, where: string): T {
   const result = schema.safeParse(data);
@@ -100,7 +104,10 @@ async function pullFromFirestore(db: Firestore, projectId: string): Promise<RawB
     many(collections.posts, postSchema),
   ]);
   if (!projects.length) throw new ContentError('No published projects in Firestore.');
+  const cvSnap = await getDoc(doc(db, collections.cv.path, collections.cv.id));
+  const cv = cvSnap.exists() ? parse(cvFileSchema, cvSnap.data(), `${collections.cv.path}/${collections.cv.id}`) : null;
   return {
+    cv,
     site,
     research,
     projects,
@@ -112,7 +119,13 @@ async function pullFromFirestore(db: Firestore, projectId: string): Promise<RawB
 }
 
 function seedBundle(): RawBundle {
-  return { ...seedContent(), meta: { source: 'seed', pulledAt: new Date().toISOString() } };
+  const seed = seedContent();
+  return {
+    ...seed,
+    site: siteSchema.parse(seed.site),
+    cv: null,
+    meta: { source: 'seed', pulledAt: new Date().toISOString() },
+  };
 }
 
 /** Splits posts into bundle metadata + parsed, highlighted bodies; holds back scheduled posts. */
@@ -127,7 +140,9 @@ async function finalise(raw: RawBundle) {
     const { slug, index, title, excerpt, date, updated, tags, order } = p;
     posts.push({ slug, index, title, excerpt, date, updated, tags, order, readingTime: readingTime(blocks) });
   }
-  return { bundle: { ...raw, posts }, bodies, scheduled: raw.posts.length - posts.length };
+  const { cv: _cv, ...rest } = raw;
+  void _cv;
+  return { bundle: { ...rest, posts }, bodies, scheduled: raw.posts.length - posts.length };
 }
 
 async function main() {
@@ -160,6 +175,18 @@ async function main() {
   }
 
   const { bundle, bodies, scheduled } = await finalise(raw);
+
+  // The CV: write the uploaded file, and never link to one that isn't there.
+  rmSync(cvDir, { recursive: true, force: true });
+  if (raw.cv) {
+    mkdirSync(cvDir, { recursive: true });
+    writeFileSync(resolve(cvDir, raw.cv.name), Buffer.from(raw.cv.data, 'base64'));
+  }
+  const cvPath = bundle.site.cvUrl.startsWith('/cv/') ? bundle.site.cvUrl.slice(4) : null;
+  if (cvPath && raw.cv?.name !== cvPath) {
+    console.warn(`[content] the profile links to /cv/${cvPath}, but no such CV is uploaded — hiding the CV link.`);
+    bundle.site.cvUrl = '';
+  }
   if (scheduled)
     console.log(`[content] ${scheduled} scheduled post${scheduled > 1 ? 's' : ''} held back until their date`);
   const validated = parse(contentBundleSchema, bundle, 'bundle');

@@ -1,6 +1,19 @@
 import { collections, siteSchema, type Site } from '@/content/schema';
 import { useDocEditor } from '../useEditors';
-import { Field, Grid, LinesInput, NumberInput, Panel, Rows, SaveBar, TextArea, TextInput, issueFor } from '../ui';
+import {
+  Field,
+  Grid,
+  LinesInput,
+  NumberInput,
+  Panel,
+  Rows,
+  SaveBar,
+  TextArea,
+  TextInput,
+  Toggle,
+  issueFor,
+} from '../ui';
+import { CvField } from './CvField';
 import { EditorState, PageHeader, placeholderProps } from './common';
 
 export default function ProfileEditor() {
@@ -93,15 +106,6 @@ export default function ProfileEditor() {
                   )}
                 </Field>
               </Grid>
-              <Field label="Availability" {...placeholderProps(d, 'availability', confirm)}>
-                {(id) => (
-                  <TextInput
-                    id={id}
-                    value={d.availability}
-                    onChange={(v) => ed.edit((x) => void (x.availability = v), 'availability')}
-                  />
-                )}
-              </Field>
               <Field
                 label="Social links"
                 hint="Full URLs, e.g. https://github.com/your-name"
@@ -136,6 +140,49 @@ export default function ProfileEditor() {
                   />
                 )}
               </Field>
+            </Panel>
+
+            <Panel
+              title="CV and availability"
+              description="What recruiters look for first. The status line appears in the hero and the contact section."
+            >
+              <Toggle
+                label="Show “Open to work”"
+                checked={d.openToWork ?? true}
+                onChange={(v) => ed.edit((x) => void (x.openToWork = v))}
+              />
+              <Field
+                label="Availability"
+                hint="e.g. Open to Data Science, ML & AI Engineering roles"
+                {...placeholderProps(d, 'availability', confirm)}
+              >
+                {(id) => (
+                  <TextInput
+                    id={id}
+                    value={d.availability}
+                    onChange={(v) => ed.edit((x) => void (x.availability = v), 'availability')}
+                  />
+                )}
+              </Field>
+              <Field label="Availability details" hint="Optional, e.g. Remote or hybrid · can start in November">
+                {(id) => (
+                  <TextInput
+                    id={id}
+                    value={d.availabilityNote ?? ''}
+                    onChange={(v) => ed.edit((x) => void (x.availabilityNote = v))}
+                  />
+                )}
+              </Field>
+              <CvField
+                ownerName={d.name}
+                value={d.cvUrl ?? ''}
+                onChange={(url) => ed.edit((x) => void (x.cvUrl = url))}
+              />
+              {issueFor(ed.issues, 'cvUrl') && (
+                <p className="text-[0.8rem] text-[#8f1d17]" role="alert">
+                  {issueFor(ed.issues, 'cvUrl')}
+                </p>
+              )}
             </Panel>
 
             <Panel title="About section">

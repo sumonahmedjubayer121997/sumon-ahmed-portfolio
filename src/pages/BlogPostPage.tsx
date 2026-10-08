@@ -12,6 +12,7 @@ import { useScrollPhysics } from '@/hooks/useScrollPhysics';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { TransitionLink } from '@/components/ui/TransitionLink';
 import { IntroText } from '@/components/ui/IntroText';
+import { cv } from '@/components/ui/Availability';
 import { Arrow } from '@/components/ui/Arrow';
 import { PipelineVisualization } from '@/components/sections/PipelineVisualization';
 import { PostBody, jumpToHeading } from '@/components/blog/PostBody';
@@ -141,6 +142,15 @@ function AuthorBox() {
         <TransitionLink to="/#contact" className="t-label link-draw text-ink">
           Get in touch
         </TransitionLink>
+        {cv.url && (
+          <a
+            href={cv.url}
+            {...(cv.download ? { download: cv.download } : { target: '_blank', rel: 'noreferrer' })}
+            className="t-label link-draw text-ink"
+          >
+            Download CV
+          </a>
+        )}
         {profiles.map((s) => (
           <a key={s.label} href={s.href} target="_blank" rel="noreferrer" className="t-label link-draw text-ink-2">
             {s.label}

@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore/lite';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import type { ZodType } from 'zod';
-import { collections } from '@/content/schema';
+import { CV_MAX_BYTES, collections, cvFileSchema, type CvFile } from '@/content/schema';
 import { seedContent } from '@/content/seed';
 import { firebase } from './firebase';
 import { stripMeta } from './useDraft';
@@ -238,3 +238,41 @@ export async function applyStarterUpdates(selected: StarterUpdate[]) {
   });
   await batch.commit();
 }
+
+/* ───────────────────────── CV ───────────────────────── */
+
+export interface CvInfo {
+  name: string;
+  size: number;
+  uploadedAt: Date | null;
+}
+
+export async function loadCvInfo(): Promise<CvInfo | null> {
+  const cv = await loadDoc<CvFile>(collections.cv.path, collections.cv.id);
+  return cv ? { name: cv.name, size: cv.size, uploadedAt: cv.updatedAt?.toDate() ?? null } : null;
+}
+
+const toBase64 = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).replace(/^data:[^,]*,/, ''));
+    reader.onerror = () => reject(reader.error ?? new Error('Could not read the file'));
+    reader.readAsDataURL(file);
+  });
+
+/**
+ * Stores a PDF CV in site/cv (see cvFileSchema); the next build publishes it at
+ * /cv/<name>. Returns the site path to put in the profile's CV link.
+ */
+export async function uploadCv(file: File, name: string): Promise<string> {
+  if (file.size > CV_MAX_BYTES)
+    throw new Error(
+      `The PDF is ${Math.round(file.size / 1024)} KB; the limit is 700 KB. Export it smaller, or paste a link instead.`,
+    );
+  const result = validate(cvFileSchema, { name, data: await toBase64(file), size: file.size, published: true });
+  if (!result.ok) throw new Error(result.issues[0]?.message ?? 'Not a valid PDF');
+  await saveDoc(collections.cv.path, collections.cv.id, result.data);
+  return `/cv/${name}`;
+}
+
+export const removeCv = () => removeDoc(collections.cv.path, collections.cv.id);

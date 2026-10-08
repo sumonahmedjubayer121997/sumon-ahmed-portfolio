@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath, URL } from 'node:url';
-import { hostingPreview } from './build/hostingPreview';
+import { generatedFiles, hostingPreview } from './build/hostingPreview';
 
 const CORE = /node_modules[\\/](react|react-dom|react-router|scheduler|cookie|set-cookie-parser)[\\/]/;
 const THREE =
@@ -10,7 +10,7 @@ const THREE =
 const MOTION = /node_modules[\\/](motion|framer-motion|motion-dom|motion-utils)[\\/]/;
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), hostingPreview()],
+  plugins: [react(), tailwindcss(), hostingPreview(), generatedFiles()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

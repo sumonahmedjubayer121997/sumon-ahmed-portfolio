@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { copyText } from '@/lib/clipboard';
 import { site } from '@/content';
+import { OpenToWork, cv } from '@/components/ui/Availability';
 import { useMagneticInteraction } from '@/hooks/useMagneticInteraction';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { SectionLabel } from '@/components/ui/SectionLabel';
@@ -85,7 +86,23 @@ export function ContactSection() {
         <div className="mt-24 grid gap-10 border-t border-[var(--line)] pt-8 md:grid-cols-12">
           <div className="md:col-span-4">
             <p className="t-label text-ash">Availability</p>
+            {site.openToWork ? <OpenToWork detail={false} className="t-label mt-3 text-[10px] text-bone" /> : null}
             <p className="mt-3 text-[1.05rem]">{site.availability}</p>
+            {site.availabilityNote && <p className="mt-1 text-[0.95rem] text-ash">{site.availabilityNote}</p>}
+            {cv.url && (
+              <div className="mt-5">
+                <MagneticButton
+                  href={cv.url}
+                  download={cv.download}
+                  variant="outline"
+                  size="sm"
+                  arrow="down"
+                  cursor="CV"
+                >
+                  Download CV
+                </MagneticButton>
+              </div>
+            )}
           </div>
           <div className="md:col-span-3">
             <p className="t-label text-ash">Based in</p>
