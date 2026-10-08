@@ -47,6 +47,7 @@
     "@vitejs/plugin-react": "^5.2.0",
     "prettier": "^3.9.9",
     "satori": "^0.35.1",
+    "shiki": "^4.5.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",

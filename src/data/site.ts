@@ -34,5 +34,5 @@ export const navItems: NavItem[] = [
   { id: 'ai-lab', label: 'AI Lab', href: '/#ai-lab' },
   { id: 'about', label: 'About', href: '/#about' },
   { id: 'research', label: 'Research', href: '/#research' },
-  { id: 'blog', label: 'Blog', href: '/#blog' },
+  { id: 'blog', label: 'Blog', href: '/blog' },
 ];

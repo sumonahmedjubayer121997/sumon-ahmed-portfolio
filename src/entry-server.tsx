@@ -28,5 +28,5 @@ export async function render(url: string): Promise<string> {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export { site, projects, posts, research, skillGroups } from './content';
-export { pageTitle, siteTitle } from './lib/meta';
+export { site, projects, posts, postsByDate, postTags, research, skillGroups } from './content';
+export { pageTitle, siteTitle, BLOG_DESCRIPTION } from './lib/meta';

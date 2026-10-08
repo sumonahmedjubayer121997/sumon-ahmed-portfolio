@@ -36,10 +36,19 @@ through `src/content/index.ts`.
   studio overview lists everything still flagged; editing a field (or "Mark as real") clears it.
 - **Evaluation figures** — add confusion matrices and precision–recall curves from your real numbers (paste straight
   from a spreadsheet or `sklearn` output), or upload images to Storage. They render as accessible charts on project pages.
-- **Blog posts** are written in the studio in a small Markdown dialect (`src/content/markdown.ts`: headings, lists, code,
-  `$$ formulas $$`, links and `<Demo kind="tfidf" />` for live demos) with a live preview. The syntax is MDX-compatible.
-  Invalid posts (an unclosed code block, an unknown demo) can't be saved and fail the build.
-- **Drafts** — anything with _Published_ off stays in Firestore but is left out of the build.
+- **Blog posts** are written in the studio in a small Markdown dialect (`src/content/markdown.ts`: `##`/`###`
+  headings, bullet and numbered lists, code, `$$ formulas $$`, `> [!NOTE]` / `[!TIP]` / `[!WARNING]` callouts, quotes,
+  `![alt](https://…)` images, links and `<Demo kind="tfidf" />` for live demos) with a live preview. The syntax is
+  MDX-compatible. Invalid posts (an unclosed code block, an unknown demo, an image without alt text) can't be saved and
+  fail the build.
+- **At build time** each post is parsed and its code highlighted (shiki, colours adjusted to 4.5:1 contrast) into
+  `src/generated/posts.json`, loaded only by the post page. The site gets `/blog` (all notes, filterable by tag),
+  `/rss.xml`, a table of contents for posts with 3+ sections, heading links, share buttons and related notes.
+- **CV and availability** — Profile → _CV and availability_: upload a PDF (up to 700 KB; stored in `site/cv`, written to
+  `/cv/<name>.pdf` by each build, so no Storage bucket is needed) or paste a link. A "Download CV" button then appears in
+  the hero, contact section, menu and blog author box; the "Available" line can be switched off.
+- **Drafts and scheduling** — _Published_ off keeps a post out of the build; a future date holds it back until the first
+  build on or after that date. Set _Last updated_ when you revise a published post.
 - The AI Lab / Method copy and navigation stay in `src/data/` (structural, not content).
 
 ### Try it locally (Firebase Emulator Suite — no real project needed)
@@ -173,9 +182,26 @@ Never read `window`, `navigator` or `performance` during render.
 - Lighthouse in a headless/CI environment renders WebGL in software (SwiftShader), which inflates Total Blocking Time.
   Measure on a real device for representative numbers.
 
-## Deployment
+## Publishing and deployment
 
-Firebase Hosting, site `sumonahmed` (https://sumonahmed.web.app):
+Firebase Hosting, site `sumonahmed` (https://sumonahmed.web.app). `.github/workflows/deploy.yml` builds from Firestore
+(`CONTENT_SOURCE=firestore`, so placeholder content can never ship) and deploys. It runs when you press **Publish now**
+in `/admin`, on every push to `main`, and daily at 05:30 UTC (scheduled posts appear on their day). Pull requests run
+`.github/workflows/checks.yml`: formatting, type-check and the full build.
+
+One-time setup for the Publish button:
+
+1. In the project folder run `npx firebase init hosting:github` — it signs in to GitHub and stores the deploy key as the
+   repository secret `FIREBASE_SERVICE_ACCOUNT_PORTFOLIOCLAUDE_1C692`. Answer _No_ to both workflow questions (the
+   project has its own); if it writes `firebase-hosting-*.yml` files, delete them.
+2. Create a [fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new): only this repository,
+   permission _Actions: Read and write_.
+3. Paste it in `/admin` → Overview → Publishing. It is stored in `site/publish`, which only admins can read, and is
+   never part of the public site.
+
+Until the deploy key exists, the workflow still builds (and fails on invalid content) but skips the deploy.
+
+Manual deploy, from your machine:
 
 ```bash
 npm run build
@@ -183,6 +209,5 @@ npx firebase deploy --only hosting
 ```
 
 `firebase.json` serves the prerendered files with clean URLs, sends unknown paths to `404.html` with a real 404
-status, rewrites `/admin` to the client-only `app.html`, marks HTML `no-cache` and hashed assets immutable. Content
-edits in `/admin` appear after the next build + deploy. For Google sign-in on the live `/admin`, add the site's domain
-under Firebase Authentication → Settings → Authorized domains.
+status, rewrites `/admin` to the client-only `app.html`, marks HTML `no-cache` and hashed assets immutable. For Google
+sign-in on the live `/admin`, add the site's domain under Firebase Authentication → Settings → Authorized domains.

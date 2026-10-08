@@ -1,5 +1,5 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { posts, formatDate, type RenderedPost } from '@/content';
+import { posts, formatDate, type PostMeta } from '@/content';
 import { springs } from '@/physics/spring';
 import { useSpringPhysics } from '@/hooks/useSpringPhysics';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -7,6 +7,7 @@ import { TransitionLink } from '@/components/ui/TransitionLink';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { RevealText } from '@/components/ui/RevealText';
 import { Arrow } from '@/components/ui/Arrow';
+import { MagneticButton } from '@/components/ui/MagneticButton';
 
 const ARROW = 56;
 
@@ -15,7 +16,7 @@ const ARROW = 56;
  * from the baseline, reading time appears and a round arrow follows the cursor
  * (it replaces the cursor inside the row).
  */
-function BlogRow({ post }: { post: RenderedPost }) {
+export function BlogRow({ post }: { post: PostMeta }) {
   const reduced = useReducedMotion();
   const rowRef = useRef<HTMLAnchorElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -128,11 +129,21 @@ export function BlogSection() {
           </p>
         </div>
         {posts.length ? (
-          <ul className="mt-16 border-t border-[var(--line)] md:mt-20">
-            {posts.map((p) => (
-              <BlogRow key={p.slug} post={p} />
-            ))}
-          </ul>
+          <>
+            <ul className="mt-16 border-t border-[var(--line)] md:mt-20">
+              {posts.slice(0, 3).map((p) => (
+                <BlogRow key={p.slug} post={p} />
+              ))}
+            </ul>
+            <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3">
+              <MagneticButton to="/blog" variant="outline" arrow="right" cursor="Read">
+                All notes ({posts.length})
+              </MagneticButton>
+              <a href="/rss.xml" className="t-label link-draw text-muted hover:text-ink">
+                RSS feed
+              </a>
+            </div>
+          </>
         ) : (
           <p className="t-label mt-16 border-t border-[var(--line)] pt-8 text-muted md:mt-20">
             First notes coming soon.

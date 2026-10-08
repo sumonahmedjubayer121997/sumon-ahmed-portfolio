@@ -26,6 +26,14 @@ export const siteSchema = z.object({
   intro: z.string().min(1),
   location: z.string().min(1),
   availability: z.string().min(1),
+  /** Shows the "Open to work" status line in the hero and contact section. */
+  openToWork: z.boolean().default(true),
+  /** A short second line, e.g. "Remote or hybrid · can start in November". */
+  availabilityNote: z.string().default(''),
+  /** An uploaded CV (`/cv/<file>.pdf`, written at build time from site/cv) or a link to one. */
+  cvUrl: z
+    .union([z.literal(''), z.string().regex(/^\/cv\/[a-z0-9-]+\.pdf$/), z.url('Enter a full link, starting https://')])
+    .default(''),
   email: z.email('Enter a valid email address'),
   socials: z.array(linkSchema),
   year: z.number().int().min(2000).max(2100),
@@ -150,13 +158,18 @@ export const researchSchema = z.object({
   placeholders,
 });
 
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+
 export const postSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers and dashes only'),
     index: z.string().min(1),
     title: z.string().min(1),
     excerpt: z.string().min(1, 'One sentence shown in the list and in link previews'),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD'),
+    /** Publication date. A future date schedules the post: builds leave it out until then. */
+    date: isoDate,
+    /** Set when a published post is revised (shown as "Updated …"). */
+    updated: z.union([isoDate, z.literal('')]).default(''),
     tags: z.array(z.string().min(1)),
     /** Markdown — see src/content/markdown.ts for the supported syntax. */
     body: z.string().trim().min(1, 'Write the post'),
@@ -168,13 +181,44 @@ export const postSchema = z
     for (const message of parseMarkdown(p.body).errors) ctx.addIssue({ code: 'custom', path: ['body'], message });
   });
 
+/**
+ * What the site bundle carries per post: everything but the body, which is
+ * parsed and highlighted at build time into src/generated/posts.json and loaded
+ * only by the post page.
+ */
+export const postMetaSchema = z.object({
+  slug: z.string(),
+  index: z.string(),
+  title: z.string(),
+  excerpt: z.string(),
+  date: isoDate,
+  updated: z.string(),
+  tags: z.array(z.string()),
+  order: z.number(),
+  readingTime: z.string(),
+});
+
+/**
+ * The uploaded CV, stored as base64 in site/cv (Firestore documents hold up to
+ * 1 MiB, so PDFs up to ~700 KB). The build writes it to dist/cv/<name>, so it is
+ * served by Hosting like any other file — no Storage bucket needed.
+ */
+export const CV_MAX_BYTES = 700 * 1024;
+export const cvFileSchema = z.object({
+  name: z.string().regex(/^[a-z0-9-]+\.pdf$/),
+  /** base64 of the PDF ("JVBERi" = "%PDF"). */
+  data: z.string().startsWith('JVBERi', 'Not a PDF file'),
+  size: z.number().max(CV_MAX_BYTES, 'The PDF is larger than 700 KB'),
+  published: z.boolean().default(true),
+});
+
 export const contentBundleSchema = z.object({
   site: siteSchema,
   projects: z.array(projectSchema),
   experience: z.array(milestoneSchema),
   skills: z.array(skillGroupSchema),
   research: researchSchema,
-  posts: z.array(postSchema),
+  posts: z.array(postMetaSchema),
   meta: z.object({
     source: z.enum(['firestore', 'seed']),
     pulledAt: z.string(),
@@ -183,6 +227,8 @@ export const contentBundleSchema = z.object({
 });
 
 export type Site = z.output<typeof siteSchema>;
+/** Before defaults are applied (the starter content leaves defaulted fields out). */
+export type SiteInput = z.input<typeof siteSchema>;
 export type Link = z.output<typeof linkSchema>;
 export type Figure = z.output<typeof figureSchema>;
 export type Project = z.output<typeof projectSchema>;
@@ -190,6 +236,8 @@ export type Milestone = z.output<typeof milestoneSchema>;
 export type SkillGroup = z.output<typeof skillGroupSchema>;
 export type Research = z.output<typeof researchSchema>;
 export type Post = z.output<typeof postSchema>;
+export type CvFile = z.output<typeof cvFileSchema>;
+export type PostMeta = z.output<typeof postMetaSchema>;
 export type ContentBundle = z.output<typeof contentBundleSchema>;
 export type ConceptId = (typeof conceptIds)[number];
 export type PreviewKind = (typeof previewKinds)[number];
@@ -198,6 +246,7 @@ export type DemoKind = (typeof demoKinds)[number];
 /** Firestore layout: collection documents keyed by slug/id, plus two singleton documents. */
 export const collections = {
   site: { path: 'site', id: 'profile' },
+  cv: { path: 'site', id: 'cv' },
   research: { path: 'research', id: 'main' },
   projects: 'projects',
   experience: 'experience',

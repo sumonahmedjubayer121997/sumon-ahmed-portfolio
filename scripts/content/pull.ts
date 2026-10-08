@@ -5,14 +5,17 @@
  *
  * Reads published content from Firestore (public, rule-protected reads — no
  * service account needed), validates it against the zod schemas and writes
- * src/generated/content.json, which the site imports. Visitors never hit
- * Firestore at runtime.
+ * src/generated/content.json, which the site imports, plus
+ * src/generated/posts.json: each post's body parsed and syntax-highlighted,
+ * loaded only by the post page. Posts dated in the future are scheduled and
+ * left out until a build on or after their date. Visitors never hit Firestore
+ * at runtime.
  *
  * CONTENT_SOURCE=auto (default) falls back to the bundled seed content when
  * Firestore isn't configured or reachable. CI sets CONTENT_SOURCE=firestore so
  * a deploy can never silently ship placeholder content.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
@@ -33,6 +36,7 @@ import type { ZodType } from 'zod';
 import {
   collections,
   contentBundleSchema,
+  cvFileSchema,
   milestoneSchema,
   postSchema,
   projectSchema,
@@ -40,18 +44,29 @@ import {
   siteSchema,
   skillGroupSchema,
   type ContentBundle,
+  type CvFile,
+  type Post,
+  type PostMeta,
 } from '../../src/content/schema';
+import { parseMarkdown, readingTime, type Block } from '../../src/content/markdown';
 import { seedContent } from '../../src/content/seed';
+import { highlight } from './highlight';
 import { EMULATOR_PORTS, readFirebaseEnv } from '../../src/content/firebaseEnv';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const outFile = resolve(root, 'src/generated/content.json');
+const postsFile = resolve(root, 'src/generated/posts.json');
+/** The uploaded CV is written here; scripts/prerender.ts copies it to dist/cv/. */
+const cvDir = resolve(root, 'src/generated/cv');
 const modeArg = process.argv.indexOf('--mode');
 const mode = modeArg > -1 ? process.argv[modeArg + 1] : 'development';
 const env = loadEnv(mode, root, ['VITE_', 'CONTENT_']);
 const source = (env.CONTENT_SOURCE || 'auto') as 'auto' | 'firestore' | 'seed';
 
 class ContentError extends Error {}
+
+/** Content as stored, with full post bodies (before `finalise`), plus the uploaded CV if any. */
+type RawBundle = Omit<ContentBundle, 'posts'> & { posts: Post[]; cv: CvFile | null };
 
 function parse<T>(schema: ZodType<T>, data: unknown, where: string): T {
   const result = schema.safeParse(data);
@@ -68,7 +83,7 @@ const withTimeout = <T>(p: Promise<T>, ms: number) =>
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms)),
   ]);
 
-async function pullFromFirestore(db: Firestore, projectId: string): Promise<ContentBundle> {
+async function pullFromFirestore(db: Firestore, projectId: string): Promise<RawBundle> {
   const single = async <T>(c: { path: string; id: string }, schema: ZodType<T>) => {
     const snap = await getDoc(doc(db, c.path, c.id));
     if (!snap.exists())
@@ -89,7 +104,10 @@ async function pullFromFirestore(db: Firestore, projectId: string): Promise<Cont
     many(collections.posts, postSchema),
   ]);
   if (!projects.length) throw new ContentError('No published projects in Firestore.');
+  const cvSnap = await getDoc(doc(db, collections.cv.path, collections.cv.id));
+  const cv = cvSnap.exists() ? parse(cvFileSchema, cvSnap.data(), `${collections.cv.path}/${collections.cv.id}`) : null;
   return {
+    cv,
     site,
     research,
     projects,
@@ -100,16 +118,39 @@ async function pullFromFirestore(db: Firestore, projectId: string): Promise<Cont
   };
 }
 
-function seedBundle(): ContentBundle {
-  return { ...seedContent(), meta: { source: 'seed', pulledAt: new Date().toISOString() } };
+function seedBundle(): RawBundle {
+  const seed = seedContent();
+  return {
+    ...seed,
+    site: siteSchema.parse(seed.site),
+    cv: null,
+    meta: { source: 'seed', pulledAt: new Date().toISOString() },
+  };
+}
+
+/** Splits posts into bundle metadata + parsed, highlighted bodies; holds back scheduled posts. */
+async function finalise(raw: RawBundle) {
+  const today = new Date().toISOString().slice(0, 10);
+  const bodies: Record<string, Block[]> = {};
+  const posts: PostMeta[] = [];
+  for (const p of raw.posts) {
+    if (p.date > today) continue;
+    const { blocks } = parseMarkdown(p.body);
+    bodies[p.slug] = await highlight(blocks);
+    const { slug, index, title, excerpt, date, updated, tags, order } = p;
+    posts.push({ slug, index, title, excerpt, date, updated, tags, order, readingTime: readingTime(blocks) });
+  }
+  const { cv: _cv, ...rest } = raw;
+  void _cv;
+  return { bundle: { ...rest, posts }, bodies, scheduled: raw.posts.length - posts.length };
 }
 
 async function main() {
-  let bundle: ContentBundle;
+  let raw: RawBundle;
   const cfg = readFirebaseEnv(env);
 
   if (source === 'seed' || (!cfg && source === 'auto')) {
-    bundle = seedBundle();
+    raw = seedBundle();
     console.log(`[content] using bundled seed content${cfg ? '' : ' (no VITE_FIREBASE_PROJECT_ID configured)'}`);
   } else {
     if (!cfg) throw new ContentError('CONTENT_SOURCE=firestore but VITE_FIREBASE_PROJECT_ID is not set.');
@@ -118,24 +159,40 @@ async function main() {
     const db = getFirestore(app);
     if (cfg.useEmulators) connectFirestoreEmulator(db, '127.0.0.1', EMULATOR_PORTS.firestore);
     try {
-      bundle = await withTimeout(pullFromFirestore(db, cfg.projectId), 15000);
+      raw = await withTimeout(pullFromFirestore(db, cfg.projectId), 15000);
       console.log(
         `[content] pulled from Firestore${cfg.useEmulators ? ' (emulator)' : ''} · ${cfg.projectId} · ` +
-          `${bundle.projects.length} projects, ${bundle.experience.length} milestones, ` +
-          `${bundle.skills.length} skill groups, ${bundle.posts.length} posts`,
+          `${raw.projects.length} projects, ${raw.experience.length} milestones, ` +
+          `${raw.skills.length} skill groups, ${raw.posts.length} posts`,
       );
     } catch (err) {
       // Invalid content always fails — publishing broken content must never succeed silently.
       if (source === 'firestore' || (err instanceof ContentError && !/^Missing|^No published/.test(err.message)))
         throw err;
       console.warn(`[content] Firestore unavailable (${(err as Error).message}) — falling back to seed content.`);
-      bundle = seedBundle();
+      raw = seedBundle();
     }
   }
 
+  const { bundle, bodies, scheduled } = await finalise(raw);
+
+  // The CV: write the uploaded file, and never link to one that isn't there.
+  rmSync(cvDir, { recursive: true, force: true });
+  if (raw.cv) {
+    mkdirSync(cvDir, { recursive: true });
+    writeFileSync(resolve(cvDir, raw.cv.name), Buffer.from(raw.cv.data, 'base64'));
+  }
+  const cvPath = bundle.site.cvUrl.startsWith('/cv/') ? bundle.site.cvUrl.slice(4) : null;
+  if (cvPath && raw.cv?.name !== cvPath) {
+    console.warn(`[content] the profile links to /cv/${cvPath}, but no such CV is uploaded — hiding the CV link.`);
+    bundle.site.cvUrl = '';
+  }
+  if (scheduled)
+    console.log(`[content] ${scheduled} scheduled post${scheduled > 1 ? 's' : ''} held back until their date`);
   const validated = parse(contentBundleSchema, bundle, 'bundle');
   mkdirSync(dirname(outFile), { recursive: true });
   writeFileSync(outFile, JSON.stringify(validated, null, 2) + '\n');
+  writeFileSync(postsFile, JSON.stringify(bodies) + '\n');
 }
 
 main().catch((err) => {

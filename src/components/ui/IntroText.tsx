@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { Fragment, type CSSProperties } from 'react';
 
 type Tag = 'h1' | 'h2' | 'p';
 
@@ -25,16 +25,19 @@ export function IntroText({
     <Component className={className}>
       <span className="sr-only">{text}</span>
       <span aria-hidden="true">
+        {/* The space sits between the word masks: inside an inline-block, a trailing space is dropped. */}
         {words.map((word, i) => (
-          <span key={i} className="-mb-[0.1em] inline-block overflow-hidden pb-[0.1em] align-bottom">
-            <span
-              className="intro-rise inline-block"
-              style={{ '--d': `${(delay + i * stagger).toFixed(3)}s` } as CSSProperties}
-            >
-              {word}
+          <Fragment key={i}>
+            <span className="-mb-[0.1em] inline-block overflow-hidden pb-[0.1em] align-bottom">
+              <span
+                className="intro-rise inline-block"
+                style={{ '--d': `${(delay + i * stagger).toFixed(3)}s` } as CSSProperties}
+              >
+                {word}
+              </span>
             </span>
             {i < words.length - 1 && ' '}
-          </span>
+          </Fragment>
         ))}
       </span>
     </Component>

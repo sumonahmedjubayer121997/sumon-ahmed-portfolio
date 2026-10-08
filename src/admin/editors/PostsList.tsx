@@ -56,6 +56,7 @@ export default function PostsList() {
                 </span>
                 <span className="col-span-11 col-start-2 flex flex-wrap gap-2 sm:col-span-5 sm:col-start-auto sm:justify-end">
                   {!p.published && <Badge>Draft</Badge>}
+                  {p.published && p.date > new Date().toISOString().slice(0, 10) && <Badge>Scheduled</Badge>}
                   {p.placeholders.length > 0 ? <Badge tone="warn">Needs review</Badge> : <Badge tone="ok">Ready</Badge>}
                 </span>
               </Link>

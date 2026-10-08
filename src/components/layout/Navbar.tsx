@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactM
 import { AnimatePresence, m } from 'motion/react';
 import { useLocation } from 'react-router';
 import { navItems, site } from '@/content';
+import { cv } from '@/components/ui/Availability';
 import { useUI } from '@/lib/store';
 import { cn } from '@/lib/cn';
 import { springs } from '@/physics/spring';
@@ -227,10 +228,21 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
               </m.li>
             ))}
           </ul>
-          <div className="flex items-end justify-between">
-            <a href={`mailto:${site.email}`} className="t-meta link-draw">
-              {site.email}
-            </a>
+          <div className="flex items-end justify-between gap-4">
+            <div className="grid gap-3">
+              {cv.url && (
+                <a
+                  href={cv.url}
+                  {...(cv.download ? { download: cv.download } : { target: '_blank', rel: 'noreferrer' })}
+                  className="t-label link-draw"
+                >
+                  Download CV
+                </a>
+              )}
+              <a href={`mailto:${site.email}`} className="t-meta link-draw">
+                {site.email}
+              </a>
+            </div>
             <Arrow direction="up-right" className="text-accent" />
           </div>
         </m.div>

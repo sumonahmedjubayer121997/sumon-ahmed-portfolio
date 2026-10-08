@@ -2,15 +2,17 @@
  * The small Markdown dialect blog posts are written in (in /admin) and stored in
  * Firestore as `posts/{slug}.body`.
  *
- *   ## Section heading
+ *   ## Section heading            ### Subheading
  *   Paragraphs separated by a blank line, with **bold**, *italic*, `code` and [links](/work/…).
- *   - list items
- *   ```python  (or ~~~)   code blocks
+ *   - bullet items                1. numbered items
+ *   ```python  (or ~~~)   code blocks (highlighted at build time)
  *   $$ formula $$
+ *   > [!NOTE]   (or [!TIP], [!WARNING])  a callout; a plain `>` is a quote
+ *   ![What the image shows](https://…/image.png "Optional caption")
  *   <Demo kind="tfidf" />   an interactive demo from the site
  *
- * Everything here is also valid MDX, so posts carry over unchanged when the blog
- * moves to MDX.
+ * Everything here is also valid MDX (callouts use GitHub's alert syntax), so
+ * posts carry over unchanged if the blog moves to MDX.
  */
 
 export const postDemoKinds = ['tfidf', 'rag-pipeline', 'agent-pipeline'] as const;
@@ -22,27 +24,53 @@ export const postDemoLabels: Record<PostDemoKind, string> = {
   'agent-pipeline': 'Agent loop',
 };
 
+export const calloutKinds = ['note', 'tip', 'warning'] as const;
+export type CalloutKind = (typeof calloutKinds)[number];
+
 export type Block =
   | { type: 'p'; text: string }
-  | { type: 'h2'; text: string }
-  | { type: 'code'; lang: string; code: string }
+  | { type: 'h2' | 'h3'; text: string; id: string }
+  /** `html` = syntax-highlighted lines, added at build time (scripts/content/highlight.ts). */
+  | { type: 'code'; lang: string; code: string; html?: string }
   | { type: 'formula'; text: string }
-  | { type: 'list'; items: string[] }
+  | { type: 'list'; items: string[]; ordered?: boolean }
+  | { type: 'callout'; kind: CalloutKind; text: string }
+  | { type: 'quote'; text: string }
+  | { type: 'image'; src: string; alt: string; caption?: string }
   | { type: 'demo'; demo: PostDemoKind };
 
 const isDemo = (k: string): k is PostDemoKind => (postDemoKinds as readonly string[]).includes(k);
+
+/** URL-safe id for a heading, unique within the post. */
+function headingId(text: string, used: Set<string>) {
+  const base =
+    stripInline(text)
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'section';
+  let id = base;
+  for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
+  used.add(id);
+  return id;
+}
 
 /** Parses a post body. Problems (unclosed blocks, unknown demos) are returned, never thrown. */
 export function parseMarkdown(src: string): { blocks: Block[]; errors: string[] } {
   const lines = src.replace(/\r\n?/g, '\n').split('\n');
   const blocks: Block[] = [];
   const errors: string[] = [];
+  const ids = new Set<string>();
   let para: string[] = [];
-  let list: string[] | null = null;
+  let list: { items: string[]; ordered: boolean } | null = null;
 
   const flush = () => {
     if (para.length) blocks.push({ type: 'p', text: para.join(' ') });
-    if (list) blocks.push({ type: 'list', items: list });
+    if (list)
+      blocks.push(
+        list.ordered ? { type: 'list', items: list.items, ordered: true } : { type: 'list', items: list.items },
+      );
     para = [];
     list = null;
   };
@@ -92,6 +120,33 @@ export function parseMarkdown(src: string): { blocks: Block[]; errors: string[] 
       continue;
     }
 
+    if (t.startsWith('>')) {
+      flush();
+      const quoted: string[] = [];
+      for (; i < lines.length && lines[i].trim().startsWith('>'); i++)
+        quoted.push(lines[i].trim().replace(/^>\s?/, ''));
+      i--;
+      const alert = /^\[!(NOTE|TIP|WARNING)\]\s*(.*)$/i.exec(quoted[0] ?? '');
+      const text = (alert ? [alert[2], ...quoted.slice(1)] : quoted).filter(Boolean).join(' ').trim();
+      if (!text) errors.push(`${at}: the ${alert ? 'callout' : 'quote'} is empty`);
+      else if (alert) blocks.push({ type: 'callout', kind: alert[1].toLowerCase() as CalloutKind, text });
+      else blocks.push({ type: 'quote', text });
+      continue;
+    }
+
+    const image = /^!\[([^\]]*)\]\((\S+?)(?:\s+"([^"]*)")?\)$/.exec(t);
+    if (image) {
+      flush();
+      const [, alt, src, caption] = image;
+      if (!alt.trim()) errors.push(`${at}: describe the image inside ![…] — screen-reader users rely on it`);
+      else if (!/^(https:\/\/|\/)/.test(src)) errors.push(`${at}: image address must start with https:// or /`);
+      else
+        blocks.push(
+          caption ? { type: 'image', src, alt: alt.trim(), caption } : { type: 'image', src, alt: alt.trim() },
+        );
+      continue;
+    }
+
     if (t.startsWith('<Demo')) {
       flush();
       const kind = /^<Demo\s+kind=["']([\w-]+)["']\s*\/>$/.exec(t)?.[1];
@@ -105,17 +160,21 @@ export function parseMarkdown(src: string): { blocks: Block[]; errors: string[] 
       continue;
     }
 
-    const heading = /^#{1,6}\s+(.+)$/.exec(t);
+    const heading = /^(#{1,6})\s+(.+)$/.exec(t);
     if (heading) {
       flush();
-      blocks.push({ type: 'h2', text: heading[1].trim() });
+      const text = heading[2].trim();
+      blocks.push({ type: heading[1].length >= 3 ? 'h3' : 'h2', text, id: headingId(text, ids) });
       continue;
     }
 
-    const item = /^[-*]\s+(.+)$/.exec(t);
+    const bullet = /^[-*]\s+(.+)$/.exec(t);
+    const numbered = /^\d+[.)]\s+(.+)$/.exec(t);
+    const item = bullet ?? numbered;
     if (item) {
-      if (para.length) flush();
-      (list ??= []).push(item[1].trim());
+      const ordered = !bullet;
+      if (para.length || (list && list.ordered !== ordered)) flush();
+      (list ??= { items: [], ordered }).items.push(item[1].trim());
       continue;
     }
 
@@ -125,7 +184,7 @@ export function parseMarkdown(src: string): { blocks: Block[]; errors: string[] 
     }
     // An indented line continues the previous list item; anything else ends the list.
     if (list && /^\s/.test(line)) {
-      list[list.length - 1] += ` ${t}`;
+      list.items[list.items.length - 1] += ` ${t}`;
       continue;
     }
     if (list) flush();
@@ -135,18 +194,33 @@ export function parseMarkdown(src: string): { blocks: Block[]; errors: string[] 
   return { blocks, errors };
 }
 
+/** The post's sections, for a table of contents. */
+export const headings = (blocks: Block[]) =>
+  blocks.filter((b): b is Extract<Block, { type: 'h2' | 'h3' }> => b.type === 'h2' || b.type === 'h3');
+
 /** Inline markup removed — for word counts and plain-text previews. */
-export const stripInline = (text: string) =>
-  text
+export function stripInline(text: string) {
+  return text
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
     .replace(/`([^`]+)`/g, '$1');
+}
 
 /** Minutes to read at ~220 words per minute (code counts too — it has to be read). */
 export function readingTime(blocks: Block[]) {
   const text = blocks
-    .map((b) => (b.type === 'list' ? b.items.join(' ') : b.type === 'code' ? b.code : b.type === 'demo' ? '' : b.text))
+    .map((b) =>
+      b.type === 'list'
+        ? b.items.join(' ')
+        : b.type === 'code'
+          ? b.code
+          : b.type === 'demo'
+            ? ''
+            : b.type === 'image'
+              ? (b.caption ?? '')
+              : b.text,
+    )
     .join(' ');
   const words = stripInline(text).split(/\s+/).filter(Boolean).length;
   return `${Math.max(1, Math.round(words / 220))} min`;

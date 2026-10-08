@@ -1,0 +1,65 @@
+# Builds the site from Firestore and deploys it to Firebase Hosting (site "sumonahmed").
+#
+# Runs when you press Publish in /admin (workflow_dispatch), when code lands on
+# main, and once a day so posts scheduled for a future date appear on their day.
+#
+# Needs the repository secret FIREBASE_SERVICE_ACCOUNT_PORTFOLIOCLAUDE_1C692,
+# created by `firebase init hosting:github` (see README → Publishing).
+name: Publish site
+run-name: ${{ inputs.reason || format('Publish ({0})', github.event_name) }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Shown in the run list
+        required: false
+        default: Published from /admin
+  push:
+    branches: [main]
+  schedule:
+    - cron: '30 5 * * *'
+
+# One deploy at a time; a newer publish waits for the running one.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build from Firestore and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Secrets can't be tested in `if:` directly.
+      HAS_DEPLOY_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PORTFOLIOCLAUDE_1C692 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # CONTENT_SOURCE=firestore: fail rather than ship the bundled starter content.
+      - name: Build
+        run: npm run build
+        env:
+          CONTENT_SOURCE: firestore
+
+      - name: Deploy key missing
+        if: env.HAS_DEPLOY_KEY != 'true'
+        run: echo "::notice::Built successfully but not deployed — add the deploy key with 'firebase init hosting:github' (README → Publishing)."
+
+      - name: Deploy to Firebase Hosting
+        if: env.HAS_DEPLOY_KEY == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PORTFOLIOCLAUDE_1C692 }}
+          projectId: portfolioclaude-1c692
+          channelId: live

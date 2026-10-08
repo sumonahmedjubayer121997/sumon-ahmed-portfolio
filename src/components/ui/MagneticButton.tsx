@@ -11,6 +11,8 @@ export interface MagneticButtonProps {
   to?: string;
   /** External URL (opens in a new tab). */
   href?: string;
+  /** With `href`: download the file under this name instead of opening it. */
+  download?: string;
   onClick?: () => void;
   arrow?: ArrowDirection | null;
   variant?: 'solid' | 'outline' | 'text';
@@ -45,6 +47,7 @@ export function MagneticButton({
   children,
   to,
   href,
+  download,
   onClick,
   arrow = 'up-right',
   variant = 'outline',
@@ -117,8 +120,7 @@ export function MagneticButton({
       <a
         ref={setBody}
         href={href}
-        target="_blank"
-        rel="noreferrer noopener"
+        {...(download ? { download } : { target: '_blank', rel: 'noreferrer noopener' })}
         className={classes}
         data-cursor={cursor}
         aria-label={ariaLabel}

@@ -5,7 +5,7 @@ import { milestones as seedMilestones } from '../data/experience';
 import { skillGroups as seedSkills } from '../data/skills';
 import { research as seedResearch } from '../data/research';
 import { posts as seedPosts } from '../data/blog';
-import type { Milestone, Post, Project, Research, Site, SkillGroup } from './schema';
+import type { Milestone, Post, Project, Research, SiteInput, SkillGroup } from './schema';
 
 const REPOS: Record<string, string> = {
   'netflix-recommendation-system': 'https://github.com/sumonahmedjubayer121997/ds_netflix_Movie_Recommender_backend',
@@ -30,7 +30,7 @@ const PROJECT_PLACEHOLDERS: Record<string, string[]> = {
  * configured. Fields that still hold invented values are listed in `placeholders`.
  */
 export function seedContent() {
-  const site: Site = {
+  const site: SiteInput = {
     ...seedSite,
     disciplines: [...seedSite.disciplines],
     statement: { ...seedSite.statement },
@@ -97,6 +97,7 @@ export function seedContent() {
     ...p,
     tags: [...p.tags],
     body: p.body.trim(),
+    updated: '',
     order: i,
     published: true,
     placeholders: ['body'],

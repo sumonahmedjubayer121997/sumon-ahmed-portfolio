@@ -1,6 +1,22 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import type { Plugin } from 'vite';
+
+/** Dev server: the uploaded CV lives in src/generated/cv until the build copies it to dist/cv. */
+export function generatedFiles(): Plugin {
+  return {
+    name: 'portfolio-generated-files',
+    configureServer(server) {
+      server.middlewares.use('/cv/', (req, res, next) => {
+        const name = decodeURIComponent((req.url ?? '').split('?')[0]).replace(/^\/+/, '');
+        const file = resolve(server.config.root, 'src/generated/cv', name);
+        if (!/^[a-z0-9-]+\.pdf$/.test(name) || !existsSync(file)) return next();
+        res.setHeader('Content-Type', 'application/pdf');
+        res.end(readFileSync(file));
+      });
+    },
+  };
+}
 
 /**
  * Makes `vite preview` serve the prerendered build the way Firebase Hosting
@@ -20,7 +36,8 @@ export function hostingPreview(): Plugin {
           req.url = '/app.html';
           return next();
         }
-        if (path === '/' || existsSync(join(dist, path))) return next();
+        const file = join(dist, path);
+        if (path === '/' || (existsSync(file) && statSync(file).isFile())) return next();
         if (!extname(path) && existsSync(join(dist, `${path}.html`))) {
           req.url = `${path}.html${url.search}`;
           return next();
