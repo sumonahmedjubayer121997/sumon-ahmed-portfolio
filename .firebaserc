@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "demo-portfolio"
+    "default": "portfolioclaude-1c692",
+    "demo": "demo-portfolio"
   }
 }
