@@ -8,9 +8,12 @@ import {
   projectSchema,
   type ConceptId,
   type Project,
+  type SkillGroup,
 } from '@/content/schema';
-import { loadDoc, removeDoc } from '../data';
+import { loadCollection, loadDoc, removeDoc } from '../data';
 import { slugify, useDocEditor } from '../useEditors';
+import { AiPanel, moveNotes, type AiOutcome } from '../ai/AiPanel';
+import { nextIndex } from '../ai/guards';
 import {
   Button,
   Field,
@@ -37,6 +40,15 @@ const CONCEPT_LABELS: Record<ConceptId, string> = {
   data: 'Data',
   software: 'Software',
 };
+
+const NOTES_EXAMPLE = `e.g.
+churn model for a telecom dataset (kaggle, 7k customers)
+problem: they lose customers and don't know who's at risk
+cleaned data, one-hot encoding, tried logistic regression + xgboost
+xgboost best, recall 0.78 on the churn class
+streamlit dashboard for the sales team
+python pandas scikit-learn xgboost streamlit
+repo https://github.com/you/churn`;
 
 const template = (): Project => ({
   slug: '',
@@ -89,10 +101,65 @@ export default function ProjectEditor() {
         return;
       }
       const ok = await ed.save(id, { slug: id });
-      if (ok) navigate(`/admin/projects/${id}`, { replace: true });
+      if (ok) {
+        moveNotes('projects', 'new', id);
+        navigate(`/admin/projects/${id}`, { replace: true });
+      }
       return;
     }
     await ed.save();
+  };
+
+  /** AI: organise rough notes into the case study. Results only from numbers in the notes. */
+  const organize = async (notes: string): Promise<AiOutcome> => {
+    const [{ organizeProject }, all, skills] = await Promise.all([
+      import('../ai/organize'),
+      loadCollection<Project>(collections.projects),
+      loadCollection<SkillGroup & { order: number }>(collections.skills),
+    ]);
+    const others = all.filter((p) => p.slug !== d?.slug);
+    const s = await organizeProject(notes, {
+      skills: skills.flatMap((g) => g.items),
+      titles: others.map((p) => p.title),
+      example: others.find((p) => p.published) ?? others[0],
+    });
+    let before: Project | null = null;
+    const filled = ['title', 'summary', 'problem', 'approach', 'pipeline', 'stack'].filter((k) => {
+      const v = s[k as keyof typeof s];
+      return Array.isArray(v) ? v.length > 0 : !!v;
+    });
+    if (s.outcomes.length) filled.push('results');
+    if (s.decisions.length) filled.push('decisions');
+    if (!d?.index) filled.push('number');
+    ed.edit((x) => {
+      before = structuredClone(x);
+      if (s.title) x.title = s.title;
+      if (s.summary) x.summary = s.summary;
+      if (s.discipline) x.discipline = s.discipline;
+      if (s.type) x.type = s.type;
+      if (s.year) x.year = s.year;
+      if (s.role) x.role = s.role;
+      if (s.stack.length) x.stack = s.stack;
+      x.concepts = s.concepts;
+      x.preview = s.preview;
+      if (s.problem) x.problem = s.problem;
+      if (s.approach.length) x.approach = s.approach;
+      if (s.pipeline.length) x.pipeline = s.pipeline;
+      if (s.outcomes.length) x.outcomes = s.outcomes;
+      if (s.decisions.length) x.decisions = s.decisions;
+      if (s.repoUrl) x.repoUrl = s.repoUrl;
+      if (s.liveUrl) x.liveUrl = s.liveUrl;
+      if (!x.index) x.index = nextIndex(all.map((p) => p.index));
+      // Results and decisions taken from your own notes are real, not placeholders.
+      x.placeholders = (x.placeholders ?? []).filter(
+        (k) => !(k === 'outcomes' && s.outcomes.length) && !(k === 'decisions' && s.decisions.length),
+      );
+    });
+    return {
+      ...s,
+      filled,
+      undo: () => ed.edit((x) => void (before && Object.assign(x, before))),
+    };
   };
 
   const remove = async () => {
@@ -122,6 +189,14 @@ export default function ProjectEditor() {
       <EditorState state={ed.state} error={ed.error}>
         {d && (
           <div className="grid gap-6">
+            <AiPanel
+              kind="projects"
+              id={isNew ? 'new' : slug}
+              noun="project"
+              example={NOTES_EXAMPLE}
+              run={organize}
+              onUseTitle={(t) => ed.edit((x) => void (x.title = t))}
+            />
             <Panel title="Basics">
               <Grid cols={3}>
                 <Field label="Title" error={issueFor(ed.issues, 'title')}>

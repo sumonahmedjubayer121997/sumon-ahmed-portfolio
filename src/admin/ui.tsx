@@ -176,6 +176,7 @@ export function TextArea({
   onChange,
   rows = 4,
   mono,
+  placeholder,
 }: {
   id: string;
   value: string;
@@ -183,12 +184,14 @@ export function TextArea({
   rows?: number;
   /** Monospace, for Markdown and code. */
   mono?: boolean;
+  placeholder?: string;
 }) {
   return (
     <textarea
       id={id}
       value={value}
       rows={rows}
+      placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
       className={cn(inputClass, 'resize-y leading-relaxed', mono && 'font-mono text-[0.85rem]')}
     />

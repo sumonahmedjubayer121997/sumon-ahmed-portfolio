@@ -54,6 +54,15 @@ through `src/content/index.ts`.
   alerts and stronger bot protection (App Check) are the next step and need the Blaze plan.
 - **Drafts and scheduling** — _Published_ off keeps a post out of the build; a future date holds it back until the first
   build on or after that date. Set _Last updated_ when you revise a published post.
+- **Organize with AI** (post and project editors) — paste rough notes; Gemini (Firebase AI Logic, `src/admin/ai/`) fills
+  the title (plus alternatives), excerpt, tags and body, or a project's summary, problem, approach, pipeline, stack,
+  results and decisions. The next number is filled automatically. The model is told to use only what the notes say, and
+  `guards.ts` checks it in code: numbers and links missing from the notes are flagged, unsupported results and URLs
+  are dropped, and gaps come back as "Questions for you". Nothing is saved until you press Save (new documents start
+  unpublished); notes stay in the browser. The SDK loads only when used. App Check guards the requests: reCAPTCHA
+  Enterprise (`VITE_RECAPTCHA_SITE_KEY`) on the live site, a debug token in `.env.development.local` on localhost.
+  Gemini's free tier needs a project without billing; this project is on Blaze (Storage requires it), so either add
+  prepaid Gemini credit in AI Studio, or point `VITE_AI_FIREBASE_*` at a separate billing-free Firebase project.
 - The AI Lab / Method copy and navigation stay in `src/data/` (structural, not content).
 
 ### Try it locally (Firebase Emulator Suite — no real project needed)
