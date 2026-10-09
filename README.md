@@ -61,8 +61,10 @@ through `src/content/index.ts`.
   are dropped, and gaps come back as "Questions for you". Nothing is saved until you press Save (new documents start
   unpublished); notes stay in the browser. The SDK loads only when used. App Check guards the requests: reCAPTCHA
   Enterprise (`VITE_RECAPTCHA_SITE_KEY`) on the live site, a debug token in `.env.development.local` on localhost.
-  Gemini's free tier needs a project without billing; this project is on Blaze (Storage requires it), so either add
-  prepaid Gemini credit in AI Studio, or point `VITE_AI_FIREBASE_*` at a separate billing-free Firebase project.
+  Gemini's free tier needs a project without billing, and this one is on Blaze (Storage requires it), so AI requests go
+  through a separate, billing-free Firebase project, `sumon-ai-eb16d` (`VITE_AI_FIREBASE_*`; App Check keys belong to
+  it). Free-tier requests are turned away first when Gemini is busy, so the studio falls back from
+  `gemini-3.8-flash` to `3.6-flash` to `3.5-flash-lite`; expect 10–30 s, occasionally a "busy, try again" message.
 - The AI Lab / Method copy and navigation stay in `src/data/` (structural, not content).
 
 ### Try it locally (Firebase Emulator Suite — no real project needed)
