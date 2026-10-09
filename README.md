@@ -247,7 +247,8 @@ One-time setup for the Publish button:
 3. Paste it in `/admin` → Overview → Publishing. It is stored in `site/publish`, which only admins can read, and is
    never part of the public site.
 
-Until the deploy key exists, the workflow still builds (and fails on invalid content) but skips the deploy.
+Until the deploy key exists, the workflow builds (catching invalid content) and then fails with "Not deployed: … secret
+is missing", so Publish in `/admin` shows _Failed_ rather than a misleading _Live_.
 
 Manual deploy, from your machine:
 

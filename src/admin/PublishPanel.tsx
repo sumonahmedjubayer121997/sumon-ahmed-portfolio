@@ -104,7 +104,7 @@ export function PublishPanel() {
       : latest && running(latest)
         ? `${latest.status === 'queued' ? 'Waiting to start' : 'Building and deploying'} — started ${ago(latest.createdAt)}. The site updates in about two minutes.`
         : latest && latest.conclusion !== 'success' && latest.conclusion !== 'cancelled'
-          ? 'The last publish failed — open its details on GitHub to see why. The site still shows the previous version.'
+          ? 'The last publish failed — open its details on GitHub to see why. The site still shows the previous version. (“Deploy key missing” means GitHub can’t deploy yet: run npx firebase init hosting:github once — README → Publishing.)'
           : lastLive
             ? `Last published ${ago(lastLive.updatedAt)}.`
             : (message ?? 'Not published from here yet.');
