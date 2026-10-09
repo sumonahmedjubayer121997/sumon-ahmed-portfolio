@@ -186,9 +186,20 @@ reduced motion it falls back to a 2D projection. If the model can't be downloade
 | ----------------------- | -------------------------------------------------------------------------------------- |
 | `⌘K` / `Ctrl K`, or `/` | Command palette: jump to any project, note or section; copy email, download CV, RSS    |
 | `D`                     | Lab mode: velocity vectors, springs, collision radii, link strain and a live stats HUD |
+| `M`                     | Sound on / off (also the speaker button in the nav, the footer and the palette)        |
 | `↑` `↓` `↵` `Esc`       | Move, open and close inside the palette                                                |
 
 Lab mode is off for reduced-motion users (and its footer switch hidden); the palette and HUD load on first use.
+
+### Sound
+
+Off by default and remembered per browser (`src/lib/sound.ts`). Everything is synthesised with the Web Audio API —
+no audio files — by `src/lib/soundEngine.ts`, a ~1.3 KB (gzipped) chunk loaded only when someone turns sound on. Notes
+come from a pentatonic scale, so overlapping sounds never clash. Sounds follow actions only: dragging and throwing
+project and skill nodes (collisions are louder the harder they hit, lower for bigger nodes, and only heard around a
+drag — not while scrolling), holding the mouse down in the hero, opening the palette and choosing an item, Lab mode,
+sending a message, and the map (a note per colour group as the pointer crosses dots, a chord when a passage is
+pinned). Audio pauses while the tab is hidden, and nothing on the site depends on hearing it.
 
 ### Debug switches
 

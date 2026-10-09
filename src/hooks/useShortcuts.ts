@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ui } from '@/lib/store';
 import { announce } from '@/lib/announce';
+import { toggleSound } from '@/lib/sound';
 
 /** Turns Lab mode on or off (unavailable with reduced motion, which it would contradict). */
 export function toggleLabMode() {
@@ -19,8 +20,8 @@ const typingIn = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
 
 /**
- * Site-wide keys: ⌘K / Ctrl+K toggles the command palette, "/" opens it, and
- * "D" toggles Lab mode. Plain keys are ignored while typing in a field.
+ * Site-wide keys: ⌘K / Ctrl+K toggles the command palette, "/" opens it, "D"
+ * toggles Lab mode and "M" toggles sound. Plain keys are ignored while typing in a field.
  */
 export function useShortcuts() {
   useEffect(() => {
@@ -37,6 +38,8 @@ export function useShortcuts() {
         s.setPaletteOpen(true);
       } else if (e.key === 'd' || e.key === 'D') {
         toggleLabMode();
+      } else if (e.key === 'm' || e.key === 'M') {
+        toggleSound();
       }
     };
     window.addEventListener('keydown', onKey);

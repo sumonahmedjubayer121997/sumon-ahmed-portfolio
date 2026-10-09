@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { site } from '@/content';
 import { contactAvailable, markSent, prepareContact, recentlySent } from '@/lib/contact';
+import { sfx } from '@/lib/sound';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import { cn } from '@/lib/cn';
 
@@ -90,6 +91,7 @@ export function ContactForm({ className }: { className?: string }) {
       });
       markSent();
       setStatus('sent');
+      sfx.sent();
     } catch {
       setStatus('failed');
     }

@@ -50,6 +50,12 @@ export class PhysicsWorld<T = unknown> {
   pointer: WorldPointer = { x: 0, y: 0, active: false, down: false };
   /** Uniform acceleration applied to every free body (used for scroll inertia). */
   gravity = { x: 0, y: 0 };
+  /**
+   * Called when two bodies (or a body and the bounds, `b` = null) hit each other
+   * faster than `impactThreshold` px/s. Used for sound.
+   */
+  onImpact: ((speed: number, a: Body<T>, b: Body<T> | null) => void) | null = null;
+  impactThreshold = 60;
 
   timestep: number;
   collisions: boolean;
@@ -211,7 +217,8 @@ export class PhysicsWorld<T = unknown> {
       for (let it = 0; it < this.collisionIterations; it++) {
         for (let i = 0; i < bodies.length; i++) {
           for (let j = i + 1; j < bodies.length; j++) {
-            resolveCollision(bodies[i], bodies[j], this.collisionPadding);
+            const hit = resolveCollision(bodies[i], bodies[j], this.collisionPadding);
+            if (hit > this.impactThreshold) this.onImpact?.(hit, bodies[i], bodies[j]);
           }
         }
       }
@@ -220,6 +227,20 @@ export class PhysicsWorld<T = unknown> {
     if (this.bounds) {
       const { minX, minY, maxX, maxY } = this.bounds;
       for (const b of bodies) {
+        if (this.onImpact) {
+          // Speed into the wall it crossed (negative when already moving back inside).
+          const out =
+            b.x < minX + b.radius
+              ? -b.vx
+              : b.x > maxX - b.radius
+                ? b.vx
+                : b.y < minY + b.radius
+                  ? -b.vy
+                  : b.y > maxY - b.radius
+                    ? b.vy
+                    : 0;
+          if (out > this.impactThreshold) this.onImpact(out, b, null);
+        }
         if (b.x < minX + b.radius) {
           b.x = minX + b.radius;
           b.vx = Math.abs(b.vx) * 0.4;

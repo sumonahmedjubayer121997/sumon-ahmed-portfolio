@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useId, useMemo, useRef } from 'react';
 import { buildHeroStructure, computeHeroLinks, type HeroBand } from '@/lib/heroStructure';
 import { createRandom } from '@/lib/random';
 import { palette } from '@/lib/color';
@@ -11,6 +11,7 @@ import { useElementSize } from '@/hooks/useElementSize';
  */
 export function HeroFallback({ count, band }: { count: number; band: HeroBand | null }) {
   const ref = useRef<HTMLDivElement>(null);
+  const soft = `${useId()}-soft`;
   const { width, height } = useElementSize(ref);
 
   const svg = useMemo(() => {
@@ -52,17 +53,23 @@ export function HeroFallback({ count, band }: { count: number; band: HeroBand | 
     <div ref={ref} className="absolute inset-0">
       {svg && (
         <svg width={width} height={height} className="absolute inset-0" aria-hidden="true">
+          {/* The same slight softness as the WebGL particles. */}
+          <filter id={soft} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="0.6" />
+          </filter>
           <path d={svg.path} stroke={palette.ink} strokeOpacity={0.12} strokeWidth={0.6} fill="none" />
-          {svg.dots.map((d, i) => (
-            <circle
-              key={i}
-              cx={d.x}
-              cy={d.y}
-              r={d.r}
-              fill={d.accent ? palette.accent : palette.ink}
-              fillOpacity={d.accent ? 0.9 : 0.4}
-            />
-          ))}
+          <g filter={`url(#${soft})`}>
+            {svg.dots.map((d, i) => (
+              <circle
+                key={i}
+                cx={d.x}
+                cy={d.y}
+                r={d.r}
+                fill={d.accent ? palette.accent : palette.ink}
+                fillOpacity={d.accent ? 0.9 : 0.4}
+              />
+            ))}
+          </g>
         </svg>
       )}
     </div>

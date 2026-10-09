@@ -17,6 +17,8 @@ interface UIState {
   labMode: boolean;
   /** The command palette (⌘K / Ctrl+K). */
   paletteOpen: boolean;
+  /** Interface sound (press M). Off by default; see lib/sound.ts. */
+  soundOn: boolean;
 
   setReducedMotion: (value: boolean) => void;
   setNavTheme: (value: NavTheme) => void;
@@ -26,6 +28,7 @@ interface UIState {
   setAiActive: (value: string | null) => void;
   setLabMode: (value: boolean) => void;
   setPaletteOpen: (value: boolean) => void;
+  setSoundOn: (value: boolean) => void;
 }
 
 export const useUI = create<UIState>()((set) => ({
@@ -38,6 +41,7 @@ export const useUI = create<UIState>()((set) => ({
   aiActive: null,
   labMode: false,
   paletteOpen: false,
+  soundOn: false,
 
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
   setNavTheme: (navTheme) => set({ navTheme }),
@@ -47,6 +51,7 @@ export const useUI = create<UIState>()((set) => ({
   setAiActive: (aiActive) => set({ aiActive }),
   setLabMode: (labMode) => set({ labMode }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setSoundOn: (soundOn) => set({ soundOn }),
 }));
 
 /** Non-reactive read for render loops. */
