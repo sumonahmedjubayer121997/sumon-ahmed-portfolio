@@ -4,6 +4,7 @@ import { TransitionLink } from '@/components/ui/TransitionLink';
 import { useUI } from '@/lib/store';
 import { toggleLabMode } from '@/hooks/useShortcuts';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { toggleSound } from '@/lib/sound';
 
 /** Lab mode for touch screens (keyboard: D). Hidden when reduced motion is on. */
 function LabToggle() {
@@ -13,6 +14,22 @@ function LabToggle() {
   return (
     <button type="button" aria-pressed={lab} onClick={toggleLabMode} className="t-label link-draw text-bone">
       Lab mode {lab ? 'on' : 'off'}
+    </button>
+  );
+}
+
+/** Interface sound (keyboard: M). */
+function SoundToggle() {
+  const on = useUI((s) => s.soundOn);
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-keyshortcuts="M"
+      onClick={toggleSound}
+      className="t-label link-draw text-bone"
+    >
+      Sound {on ? 'on' : 'off'}
     </button>
   );
 }
@@ -37,6 +54,7 @@ export function Footer() {
             RSS
           </a>
           <LabToggle />
+          <SoundToggle />
         </nav>
         <MagneticButton
           variant="text"

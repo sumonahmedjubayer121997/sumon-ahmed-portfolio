@@ -7,11 +7,13 @@ import { IntroText } from '@/components/ui/IntroText';
 import { TransitionLink } from '@/components/ui/TransitionLink';
 import { Arrow } from '@/components/ui/Arrow';
 import { MAP_DESCRIPTION } from '@/lib/meta';
+import { sfx } from '@/lib/sound';
 import { cn } from '@/lib/cn';
 
 const loadScene = () => import('@/three/EmbeddingMapScene');
 const points = embeddingMap.points;
 const ALL: Record<MapGroup, boolean> = { project: true, post: true, research: true, profile: true };
+const groupIndex = (i: number) => groups.findIndex((g) => g.id === groupOf(points[i].kind));
 
 function Swatch({ group }: { group: MapGroup }) {
   return (
@@ -36,10 +38,20 @@ export default function MapPage() {
   const [hovered, setHovered] = useState<number | null>(null);
   const tip = useRef<HTMLDivElement>(null);
   const press = useRef<{ x: number; y: number; hovered: number | null } | null>(null);
-  const onHover = useCallback((i: number | null) => setHovered(i), []);
+  const lastMove = useRef(0);
+  // Each colour group has a note. Only when the pointer moved onto a dot, not when the spin carries one under it.
+  const onHover = useCallback((i: number | null) => {
+    setHovered(i);
+    if (i !== null && performance.now() - lastMove.current < 200) sfx.note(groupIndex(i));
+  }, []);
+  const pin = (i: number) => {
+    setSelected(i);
+    sfx.chord(groupIndex(i));
+  };
 
   // The tooltip follows the pointer without re-rendering.
   const move = (e: ReactPointerEvent<HTMLDivElement>) => {
+    lastMove.current = performance.now();
     const r = e.currentTarget.getBoundingClientRect();
     if (tip.current)
       tip.current.style.transform = `translate3d(${e.clientX - r.left + 16}px, ${e.clientY - r.top + 16}px, 0)`;
@@ -48,8 +60,7 @@ export default function MapPage() {
   const up = (e: ReactPointerEvent) => {
     const start = press.current;
     press.current = null;
-    if (start && start.hovered !== null && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 6)
-      setSelected(start.hovered);
+    if (start && start.hovered !== null && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 6) pin(start.hovered);
   };
 
   const pinned = selected !== null ? points[selected] : null;
@@ -152,7 +163,7 @@ export default function MapPage() {
                       <li key={j}>
                         <button
                           type="button"
-                          onClick={() => setSelected(j)}
+                          onClick={() => pin(j)}
                           className="flex w-full items-baseline justify-between gap-3 py-2.5 text-left text-[0.9rem] hover:bg-paper/60"
                         >
                           <span className="min-w-0">
@@ -193,7 +204,7 @@ export default function MapPage() {
                     <li key={i} className="border-b border-[var(--line)]">
                       <button
                         type="button"
-                        onClick={() => setSelected(i)}
+                        onClick={() => pin(i)}
                         aria-pressed={selected === i}
                         className={cn(
                           'block w-full py-2.5 text-left transition-colors hover:text-ink',

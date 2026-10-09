@@ -1,7 +1,8 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { useUI } from './lib/store';
 import { registerAnnouncer } from './lib/announce';
 import { useShortcuts } from './hooks/useShortcuts';
+import { initSound } from './lib/sound';
 import { Route, Routes, useLocation } from 'react-router';
 import { LazyMotion, MotionConfig, domAnimation } from 'motion/react';
 import { useReducedMotion, useReducedMotionSync } from './hooks/useReducedMotion';
@@ -64,6 +65,7 @@ function LabHost() {
 function Site() {
   useReducedMotionSync();
   useShortcuts();
+  useEffect(initSound, []);
   const reduced = useReducedMotion();
 
   return (

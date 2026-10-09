@@ -9,6 +9,7 @@ import { clamp, damp, easeInOutCubic } from '@/lib/math';
 import { palette } from '@/lib/color';
 import { qaSettled } from '@/lib/device';
 import { heroTelemetry } from '@/lib/telemetry';
+import { sfx } from '@/lib/sound';
 import { SpatialHash } from '@/physics/spatialHash';
 import type { ParticleInput } from '@/physics/particles';
 import { createLinesMaterial, createPointsMaterial, dynamicAttribute } from './shaders';
@@ -21,6 +22,9 @@ export interface ParticleFieldProps {
 }
 
 const MAX_SEGMENTS = 2600;
+/** Point softness (0 = crisp, 1 = fully out of focus), and the extra softness per px of depth. */
+const HERO_BLUR = 0.5;
+const HERO_DEPTH_BLUR = 0.008;
 
 /**
  * The hero simulation. Particles start dispersed (raw data), then a global
@@ -42,6 +46,7 @@ export function ParticleField({ count, compact, band }: ParticleFieldProps) {
   const scattered = useRef(false);
   const camShift = useRef({ x: 0, y: 0 });
   const input = useRef<ParticleInput>({ x: 0, y: 0, active: false, down: false });
+  const holding = useRef(false);
 
   const gfx = useMemo(() => {
     const sizes = new Float32Array(count);
@@ -74,7 +79,14 @@ export function ParticleField({ count, compact, band }: ParticleFieldProps) {
       lineAlpha,
       linePosAttr,
       lineAlphaAttr,
-      pointsMat: createPointsMaterial({ ink: palette.ink, accent: palette.accent, opacity: 0.95 }),
+      // A slight blur everywhere, more for points far in front of or behind the structure.
+      pointsMat: createPointsMaterial({
+        ink: palette.ink,
+        accent: palette.accent,
+        opacity: 0.95,
+        blur: HERO_BLUR,
+        depthBlur: HERO_DEPTH_BLUR,
+      }),
       linesMat: createLinesMaterial({ color: palette.ink, opacity: 0.26 }),
       hash: new SpatialHash(count),
       linkCounts: new Uint8Array(count),
@@ -115,6 +127,8 @@ export function ParticleField({ count, compact, band }: ParticleFieldProps) {
       scattered.current = true;
     }
   }, [size.width, size.height, camera, count, compact, band, field, gfx, random]);
+
+  useEffect(() => () => sfx.holdEnd(), []);
 
   useEffect(() => {
     heroTelemetry.nodes = count;
@@ -159,6 +173,15 @@ export function ParticleField({ count, compact, band }: ParticleFieldProps) {
     input.current.y = -(ly - rect.height / 2);
     input.current.active = inside;
     input.current.down = inside && pointer.down;
+
+    // Holding the mouse down gathers the particles; with sound on, a soft swell follows it.
+    // (Not for touch, where a press in the hero is usually the start of a scroll.)
+    const hold = input.current.down && pointer.type !== 'touch';
+    if (hold !== holding.current) {
+      holding.current = hold;
+      if (hold) sfx.holdStart();
+      else sfx.holdEnd();
+    }
 
     field.step(dt, t, input.current, params);
     gfx.posAttr.needsUpdate = true;

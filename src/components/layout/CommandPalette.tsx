@@ -5,6 +5,7 @@ import { useTransitionNavigate } from '@/hooks/useTransitionNavigate';
 import { toggleLabMode } from '@/hooks/useShortcuts';
 import { copyText } from '@/lib/clipboard';
 import { announce } from '@/lib/announce';
+import { sfx, toggleSound } from '@/lib/sound';
 import { ui } from '@/lib/store';
 import { cn } from '@/lib/cn';
 
@@ -119,6 +120,14 @@ function buildItems(): Item[] {
       keywords: 'physics debug fps vectors',
       run: () => toggleLabMode(),
     },
+    {
+      id: 'a-sound',
+      group: 'Actions',
+      label: ui().soundOn ? 'Turn sound off' : 'Turn sound on',
+      hint: 'M',
+      keywords: 'audio music mute volume',
+      run: () => toggleSound(),
+    },
     ...site.socials
       .filter((s) => /^https?:\/\/[^/]+\/.+/.test(s.href))
       .map((s): Item => ({
@@ -211,6 +220,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
   }, [current]);
 
   const run = (item: Item) => {
+    sfx.select();
     onClose();
     // Let the dialog unmount (and focus return) before navigating.
     window.setTimeout(() => item.run(go), 0);

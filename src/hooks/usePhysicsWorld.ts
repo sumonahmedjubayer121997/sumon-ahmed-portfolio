@@ -3,6 +3,7 @@ import { addTicker } from '@/lib/ticker';
 import { pointer } from '@/lib/pointer';
 import { scroll } from '@/lib/scroll';
 import { createRectCache } from '@/lib/rectCache';
+import { sfx } from '@/lib/sound';
 import type { Body } from '@/physics/body';
 import type { PhysicsWorld } from '@/physics/world';
 import { observeVisibility } from './useInView';
@@ -18,6 +19,8 @@ export interface PhysicsStageOptions<T> {
 }
 
 const DRAG_THRESHOLD = 6;
+/** Collisions make sound while a node is dragged and for this long after it is let go (ms). */
+const SOUND_AFTER_RELEASE = 1500;
 
 /**
  * Binds a PhysicsWorld to a DOM stage: maps the global pointer into stage space,
@@ -39,6 +42,7 @@ export function usePhysicsWorld<T>(
     let startY = 0;
     let dragged = false;
     let suppressClickUntil = 0;
+    let soundUntil = 0;
     return {
       onPointerDown(e: ReactPointerEvent, body: Body<T>) {
         if (e.button !== 0) return;
@@ -58,15 +62,24 @@ export function usePhysicsWorld<T>(
           world.startDrag(pending, localX, localY);
           dragged = true;
           document.documentElement.dataset.dragging = 'true';
+          sfx.grab();
         }
       },
       release() {
         pending = null;
         if (world.dragged) {
-          world.endDrag();
+          const body = world.endDrag();
           delete document.documentElement.dataset.dragging;
-          if (dragged) suppressClickUntil = performance.now() + 250;
+          if (dragged) {
+            suppressClickUntil = performance.now() + 250;
+            soundUntil = performance.now() + SOUND_AFTER_RELEASE;
+            if (body) sfx.release(Math.hypot(body.vx, body.vy));
+          }
         }
+      },
+      /** True while collisions should be heard: only around a drag, not when scrolling or hovering. */
+      audible() {
+        return !!world.dragged || performance.now() < soundUntil;
       },
       /** Call from onClick: true if this click ended a drag and should be ignored. */
       shouldSuppressClick() {
@@ -83,6 +96,9 @@ export function usePhysicsWorld<T>(
     let idleFrames = 0;
     let time = 0;
     const stopVisibility = observeVisibility(stage, (v) => (visible = v), '80px');
+    world.onImpact = (speed, a, b) => {
+      if (drag.audible()) sfx.impact(speed, Math.max(a.radius, b?.radius ?? 0));
+    };
     const onUp = () => drag.release();
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
@@ -126,6 +142,7 @@ export function usePhysicsWorld<T>(
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
       drag.release();
+      world.onImpact = null;
     };
   }, [world, stageRef, options.enabled, drag]);
 

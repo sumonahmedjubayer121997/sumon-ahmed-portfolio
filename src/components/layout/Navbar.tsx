@@ -6,6 +6,7 @@ import { cv } from '@/components/ui/Availability';
 import { useUI } from '@/lib/store';
 import { useClientValue } from '@/lib/hydration';
 import { cn } from '@/lib/cn';
+import { toggleSound } from '@/lib/sound';
 import { springs } from '@/physics/spring';
 import { useSpringPhysics } from '@/hooks/useSpringPhysics';
 import { useSectionTracking } from '@/hooks/useSectionTracking';
@@ -61,6 +62,7 @@ export function Navbar() {
         />
 
         <div className="flex items-center gap-3">
+          <SoundButton />
           <SearchButton />
           <span className="hidden md:inline-flex">
             <MagneticButton to="/#contact" size="sm" variant="outline" cursor="Say hi">
@@ -125,6 +127,40 @@ function SearchButton() {
         <path d="m10.5 10.5 3.5 3.5" strokeLinecap="round" />
       </svg>
       <kbd className="hidden font-[inherit] text-[10px] md:inline">{shortcut}</kbd>
+    </button>
+  );
+}
+
+/** Interface sound on/off (keyboard: M). Off until the visitor turns it on. */
+function SoundButton() {
+  const on = useUI((s) => s.soundOn);
+  return (
+    <button
+      type="button"
+      onClick={toggleSound}
+      aria-label="Sound"
+      aria-pressed={on}
+      aria-keyshortcuts="M"
+      data-cursor={on ? 'Mute' : 'Sound'}
+      className="flex h-10 w-10 items-center justify-center rounded-full text-current opacity-80 transition-opacity hover:opacity-100 md:h-9 md:w-9 md:border md:border-[var(--line)]"
+    >
+      <svg
+        viewBox="0 0 16 16"
+        className="h-4 w-4"
+        aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M2.5 6.2h2.3L8 3.5v9L4.8 9.8H2.5z" />
+        {on ? (
+          <path d="M10.6 5.8a3 3 0 0 1 0 4.4M12.4 4a5.6 5.6 0 0 1 0 8" />
+        ) : (
+          <path d="m10.8 6.3 3.4 3.4m0-3.4-3.4 3.4" />
+        )}
+      </svg>
     </button>
   );
 }
