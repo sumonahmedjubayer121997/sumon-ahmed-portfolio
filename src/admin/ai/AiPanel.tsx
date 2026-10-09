@@ -66,6 +66,7 @@ export function AiPanel({
   const [notes, setNotes] = useState(() => readNotes(key));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState('');
   const [outcome, setOutcome] = useState<AiOutcome | null>(null);
   const [open, setOpen] = useState(() => id === 'new' || !!readNotes(key));
 
@@ -86,10 +87,13 @@ export function AiPanel({
     }
     setBusy(true);
     setError(null);
+    setDetail('');
     try {
       setOutcome(await run(notes));
     } catch (e) {
-      setError((e as Error).message);
+      const err = e as Error & { cause?: { message?: string } };
+      setError(err.message);
+      setDetail(err.cause?.message ?? '');
     } finally {
       setBusy(false);
     }
@@ -144,9 +148,17 @@ export function AiPanel({
             </p>
           </div>
           {error && (
-            <p className="text-[0.9rem] text-[#8f1d17]" role="alert">
-              {error}
-            </p>
+            <div className="grid gap-1.5">
+              <p className="text-[0.9rem] text-[#8f1d17]" role="alert">
+                {error}
+              </p>
+              {detail && (
+                <details className="text-[0.8rem] text-muted">
+                  <summary className="cursor-pointer hover:text-ink">Technical details</summary>
+                  <code className="mt-1 block break-words font-mono text-[0.75rem]">{detail}</code>
+                </details>
+              )}
+            </div>
           )}
 
           {outcome && (
