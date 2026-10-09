@@ -58,9 +58,12 @@ jobs:
         env:
           CONTENT_SOURCE: firestore
 
+      # Fail loudly: a green run that didn't deploy made Publish in /admin show "Live" for an unchanged site.
       - name: Deploy key missing
         if: env.HAS_DEPLOY_KEY != 'true'
-        run: echo "::notice::Built successfully but not deployed — add the deploy key with 'firebase init hosting:github' (README → Publishing)."
+        run: |
+          echo "::error::Not deployed: the repository secret FIREBASE_SERVICE_ACCOUNT_PORTFOLIOCLAUDE_1C692 is missing. Run 'npx firebase init hosting:github' once (README → Publishing)."
+          exit 1
 
       - name: Deploy to Firebase Hosting
         if: env.HAS_DEPLOY_KEY == 'true'
