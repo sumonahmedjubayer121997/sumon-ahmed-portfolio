@@ -12,16 +12,15 @@ import { aiConfig, aiProject } from './config';
  */
 
 /**
- * Newest first. Which models the free tier offers (and each one's daily allowance)
- * changes, so on "not found" or "no allowance" the next one is tried, and the
- * first that answers is remembered.
+ * Newest first. Which models a project can use (and each one's allowance) changes,
+ * so on "not found" or "no allowance" the next one is tried, and the first that
+ * answers is remembered. (The 2.5 models are closed to new users as of Oct 2026.)
  */
 const MODELS = [
   import.meta.env.VITE_GEMINI_MODEL as string | undefined,
   'gemini-3.8-flash',
   'gemini-3.6-flash',
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
+  'gemini-3.5-flash-lite',
 ].filter((m): m is string => !!m);
 const MODEL_KEY = 'ai:model';
 
