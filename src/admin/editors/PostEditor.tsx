@@ -4,8 +4,10 @@ import { collections, postSchema, type Post } from '@/content/schema';
 import { parseMarkdown, postDemoKinds, readingTime } from '@/content/markdown';
 import { PostBody } from '@/components/blog/PostBody';
 import { cn } from '@/lib/cn';
-import { loadDoc, removeDoc } from '../data';
+import { loadCollection, loadDoc, removeDoc } from '../data';
 import { slugify, useDocEditor } from '../useEditors';
+import { AiPanel, moveNotes, type AiOutcome } from '../ai/AiPanel';
+import { nextIndex } from '../ai/guards';
 import {
   Button,
   Field,
@@ -52,6 +54,12 @@ const SYNTAX: Array<[string, string]> = [
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+const NOTES_EXAMPLE = `e.g.
+rag chunking - fixed 500 token chunks vs splitting on headings
+heading split better: hit rate 0.62 → 0.81 on 40 hand-written questions
+tables in PDFs get mangled, convert to markdown first
+code: def chunk(md): return md.split("\n## ")`;
+
 export default function PostEditor() {
   const { slug = '' } = useParams();
   const isNew = slug === 'new';
@@ -78,10 +86,44 @@ export default function PostEditor() {
         return;
       }
       const ok = await ed.save(id, { slug: id });
-      if (ok) navigate(`/admin/posts/${id}`, { replace: true });
+      if (ok) {
+        moveNotes('posts', 'new', id);
+        navigate(`/admin/posts/${id}`, { replace: true });
+      }
       return;
     }
     await ed.save();
+  };
+
+  /** AI: organise rough notes into title, excerpt, tags and body (number too, if empty). */
+  const organize = async (notes: string): Promise<AiOutcome> => {
+    const [{ organizePost }, all] = await Promise.all([
+      import('../ai/organize'),
+      loadCollection<Post>(collections.posts),
+    ]);
+    const others = all.filter((p) => p.slug !== d?.slug);
+    const example = others.find((p) => p.published) ?? others[0];
+    const s = await organizePost(notes, {
+      tags: [...new Set(others.flatMap((p) => p.tags))],
+      titles: others.map((p) => p.title),
+      example: example && { title: example.title, body: example.body },
+    });
+    let before: Post | null = null;
+    const filled = ['title', 'excerpt', 'tags', 'body'];
+    if (!d?.index) filled.push('number');
+    ed.edit((x) => {
+      before = structuredClone(x);
+      if (s.title) x.title = s.title;
+      if (s.excerpt) x.excerpt = s.excerpt;
+      if (s.tags.length) x.tags = s.tags;
+      if (s.body) x.body = s.body;
+      if (!x.index) x.index = nextIndex(all.map((p) => p.index));
+    }, 'body');
+    return {
+      ...s,
+      filled,
+      undo: () => ed.edit((x) => void (before && Object.assign(x, before))),
+    };
   };
 
   const remove = async () => {
@@ -111,6 +153,14 @@ export default function PostEditor() {
       <EditorState state={ed.state} error={ed.error}>
         {d && (
           <div className="grid gap-6">
+            <AiPanel
+              kind="posts"
+              id={isNew ? 'new' : slug}
+              noun="post"
+              example={NOTES_EXAMPLE}
+              run={organize}
+              onUseTitle={(t) => ed.edit((x) => void (x.title = t))}
+            />
             <Panel title="Basics">
               <Grid cols={3}>
                 <Field label="Title" error={issueFor(ed.issues, 'title')}>

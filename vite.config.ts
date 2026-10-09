@@ -17,6 +17,18 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  // Dev only: pre-bundle every Firebase entry together. Discovered one by one (App Check and AI load lazily
+  // in /admin), they'd get separate copies of @firebase/app and fail with "app-check has not been registered".
+  optimizeDeps: {
+    include: [
+      'firebase/app',
+      'firebase/auth',
+      'firebase/firestore/lite',
+      'firebase/storage',
+      'firebase/app-check',
+      'firebase/ai',
+    ],
+  },
   build: {
     target: 'es2022',
     // scripts/prerender.ts reads it to preload each route's chunks.
