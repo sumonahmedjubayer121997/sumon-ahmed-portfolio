@@ -49,12 +49,15 @@ export function explain(e: unknown): string {
   const err = e as AIError & { customErrorData?: { status?: number } };
   const status = err.customErrorData?.status;
   const msg = String(err?.message ?? e);
+  const project = aiProject?.config.projectId ?? 'this project';
   if (/prepay|credits are depleted|billing/i.test(msg))
-    return 'Gemini is treating this project as a paid (billed) project with no credit, so the free tier doesn’t apply. In AI Studio (ai.studio/projects) check the project’s tier, or unlink billing from the Firebase project to return it to the free Spark plan.';
+    return `Gemini is treating ${project} as a paid (billed) project with no credit — Gemini’s free tier doesn’t apply to projects on the Blaze plan. Add prepaid credit in AI Studio (ai.studio/projects → ${project} → Set up Prepay), or point VITE_AI_FIREBASE_* at a separate billing-free project.`;
   if (status === 429 || /quota|RESOURCE_EXHAUSTED|rate limit/i.test(msg))
     return 'The free Gemini allowance is used up for now. It resets at midnight Pacific time — or wait a minute if you sent several requests quickly.';
   if (/app.?check|attestation|recaptcha/i.test(msg) || status === 401)
-    return 'App Check rejected the request. On localhost, check the debug token in .env.development.local is registered in Firebase → App Check → Manage debug tokens. On the live site, check sumonahmed.web.app is in the reCAPTCHA key’s domains.';
+    return aiConfig.debugToken
+      ? 'App Check rejected the request. Check the debug token in .env.development.local is registered in Firebase → App Check → Apps → ⋮ → Manage debug tokens.'
+      : `App Check rejected the request. The reCAPTCHA key must be created in the same Google Cloud project as this app (${project}) with the reCAPTCHA Enterprise API enabled, list ${location.hostname} in its domains, and be the key registered for the web app in Firebase → App Check.`;
   if (/not been used|disabled|SERVICE_DISABLED|api-not-enabled/i.test(msg) || status === 403)
     return 'Firebase AI Logic isn’t switched on for this project yet: Firebase console → AI Services → AI Logic → Get started → Gemini Developer API.';
   if (/fetch|network|Failed to fetch/i.test(msg)) return 'Couldn’t reach Gemini — check your connection and try again.';
