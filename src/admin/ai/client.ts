@@ -43,6 +43,10 @@ function connect(): AI {
   return ai;
 }
 
+/** Gemini overloaded or briefly failing — free-tier requests are the first turned away at busy times. */
+const busy = (status: number | undefined, msg: string) =>
+  (status !== undefined && status >= 500) || /high demand|overloaded|UNAVAILABLE|try again later/i.test(msg);
+
 /** A plain-language explanation for the errors people actually hit. */
 export function explain(e: unknown): string {
   const err = e as AIError & { customErrorData?: { status?: number } };
@@ -59,15 +63,32 @@ export function explain(e: unknown): string {
       : `App Check rejected the request. The reCAPTCHA key must be created in the same Google Cloud project as this app (${project}) with the reCAPTCHA Enterprise API enabled, list ${location.hostname} in its domains, and be the key registered for the web app in Firebase → App Check.`;
   if (/not been used|disabled|SERVICE_DISABLED|api-not-enabled/i.test(msg) || status === 403)
     return 'Firebase AI Logic isn’t switched on for this project yet: Firebase console → AI Services → AI Logic → Get started → Gemini Developer API.';
-  if (/fetch|network|Failed to fetch/i.test(msg)) return 'Couldn’t reach Gemini — check your connection and try again.';
+  if (busy(status, msg))
+    return 'Gemini is busy right now (free-tier requests are the first to wait at busy times). Try again in a minute — your notes are kept.';
+  // Every AI error says "Error fetching from …", so only a real network failure counts here.
+  if (/Failed to fetch|NetworkError|network error|ERR_INTERNET/i.test(msg))
+    return 'Couldn’t reach Gemini — check your connection and try again.';
   return `Gemini returned an error: ${msg.replace(/^.*?\]\s*/, '').slice(0, 300)}`;
 }
 
-/** Worth trying the next model: this one doesn't exist, or has no allowance left (allowances are per model). */
+/** The model is gone for good (retired or unknown), not just busy or out of allowance. */
+const gone = (e: unknown) => {
+  const err = e as AIError & { customErrorData?: { status?: number } };
+  return (
+    err.customErrorData?.status === 404 ||
+    /not found|is not supported|unknown model|no longer available/i.test(String(err?.message))
+  );
+};
+
+/**
+ * Worth trying the next model: this one doesn't exist, has no allowance left
+ * (allowances are per model), or is overloaded right now.
+ */
 const tryNext = (e: unknown) => {
   const err = e as AIError & { customErrorData?: { status?: number } };
   const status = err.customErrorData?.status;
-  return status === 404 || status === 429 || /not found|is not supported|unknown model/i.test(String(err?.message));
+  const msg = String(err?.message);
+  return status === 404 || status === 429 || busy(status, msg) || /not found|is not supported|unknown model/i.test(msg);
 };
 
 /**
@@ -102,10 +123,13 @@ export async function generateJson<T>(opts: {
     try {
       const res = await model.generateContent(opts.prompt);
       const text = res.response.text();
-      try {
-        localStorage.setItem(MODEL_KEY, name);
-      } catch {
-        /* storage blocked */
+      // Remember it only if the newer ones are gone for good, so a busy moment doesn't pin an older model.
+      if (failures.every(gone)) {
+        try {
+          localStorage.setItem(MODEL_KEY, name);
+        } catch {
+          /* storage blocked */
+        }
       }
       return { data: JSON.parse(text) as T, model: name };
     } catch (e) {
@@ -113,9 +137,7 @@ export async function generateJson<T>(opts: {
       if (!tryNext(e)) break;
     }
   }
-  // Explain the most telling failure: a real quota or billing problem rather than "model not found".
-  const telling =
-    failures.find((e) => !/not found|is not supported|unknown model/i.test(String((e as Error)?.message))) ??
-    failures.at(-1);
+  // Explain the most telling failure: a real quota, billing or busy problem rather than "model not found".
+  const telling = failures.find((e) => !gone(e)) ?? failures.at(-1);
   throw new Error(explain(telling), { cause: telling });
 }
