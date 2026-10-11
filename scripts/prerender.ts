@@ -214,6 +214,7 @@ const routes: Route[] = [
       title: p.title,
       footer: `${host}/blog`,
       tags: p.tags,
+      ...(p.sketch ? { sketch: p.sketch } : {}),
     },
     ld: {
       '@context': 'https://schema.org',

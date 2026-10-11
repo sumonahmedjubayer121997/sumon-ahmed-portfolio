@@ -5,6 +5,8 @@ import '@fontsource-variable/inter-tight';
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource/instrument-serif/400.css';
 import '@fontsource/instrument-serif/400-italic.css';
+// Handwriting for blog sketches; the browser only downloads it on pages that use it.
+import '@fontsource/caveat/500.css';
 import './index.css';
 import { installPointer } from './lib/pointer';
 import { installScroll } from './lib/scroll';

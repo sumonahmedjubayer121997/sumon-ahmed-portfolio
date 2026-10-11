@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { parseMarkdown } from './markdown';
+import { sketchKinds, sketchProblems } from './sketch';
 
 /**
  * Content schemas — the single source of truth for what lives in Firestore.
@@ -160,6 +161,18 @@ export const researchSchema = z.object({
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
+/** A hand-drawn diagram or chart (see content/sketch.ts), e.g. a post's header sketch. */
+export const sketchSchema = z
+  .object({
+    kind: z.enum(sketchKinds),
+    labels: z.array(z.string().trim().min(1)),
+    values: z.array(z.string().trim()).optional(),
+    caption: z.string().trim().max(90).optional(),
+  })
+  .superRefine((s, ctx) => {
+    for (const message of sketchProblems(s)) ctx.addIssue({ code: 'custom', path: ['labels'], message });
+  });
+
 export const postSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers and dashes only'),
@@ -173,6 +186,8 @@ export const postSchema = z
     tags: z.array(z.string().min(1)),
     /** Markdown — see src/content/markdown.ts for the supported syntax. */
     body: z.string().trim().min(1, 'Write the post'),
+    /** Hand-drawn header shown above the post and on its card; null for none. */
+    sketch: sketchSchema.nullable().default(null),
     order: z.number().default(0),
     published: z.boolean().default(true),
     placeholders,
@@ -196,6 +211,7 @@ export const postMetaSchema = z.object({
   tags: z.array(z.string()),
   order: z.number(),
   readingTime: z.string(),
+  sketch: sketchSchema.nullable().default(null),
 });
 
 /**

@@ -1,6 +1,7 @@
 import { Schema } from 'firebase/ai';
 import { conceptIds, previewKinds, type ConceptId, type PreviewKind, type Project } from '@/content/schema';
 import { parseMarkdown, postDemoKinds } from '@/content/markdown';
+import { sketchKinds, sketchProblems, type SketchKind, type SketchSpec } from '@/content/sketch';
 import { generateJson } from './client';
 import { keepUrlFromNotes, numbersIn, unsupportedNumbers, unsupportedUrls } from './guards';
 
@@ -262,4 +263,67 @@ export async function organizeProject(notes: string, ctx: ProjectContext): Promi
   const urls = unsupportedUrls(text, notes);
   if (urls.length) s.warnings.push(`Links that aren’t in your notes: ${urls.join(', ')}`);
   return s;
+}
+
+/* ───────────────────────── Header sketch ───────────────────────── */
+
+export interface SketchSuggestion {
+  spec: SketchSpec;
+  warnings: string[];
+  model: string;
+}
+
+const sketchResponse = Schema.object({
+  properties: {
+    kind: Schema.enumString({
+      enum: [...sketchKinds],
+      description:
+        'pipeline: a process or flow (A → B → C). cycle: a loop that repeats (e.g. an agent). compare: exactly two approaches or options side by side. bar: only when the post states numeric results to compare.',
+    }),
+    labels: list('2 to 5 short labels in order, at most 22 characters each (compare: exactly 2).'),
+    values: list('bar only: one value per label, copied exactly from the post (e.g. "0.81", "92%"); empty otherwise.'),
+    caption: str('Optional caption under the sketch, at most 70 characters; empty if not needed.'),
+  },
+});
+
+/** Suggests a header sketch for a post. Chart numbers must appear in the post, or the chart is turned down. */
+export async function suggestSketch(post: { title: string; excerpt: string; body: string }): Promise<SketchSuggestion> {
+  const { data, model } = await generateJson<{ kind: SketchKind; labels: string[]; values: string[]; caption: string }>(
+    {
+      system: `You choose one small hand-drawn diagram that captures the main idea of a blog post by Sumon Ahmed, a data scientist and AI engineer. Use only ideas, terms and numbers from the post. Labels are short and concrete, in the post's own words, in British English. Prefer the diagram a reader would sketch on a whiteboard to explain the post.`,
+      prompt: `Title: ${post.title}
+Summary: ${post.excerpt}
+
+POST:
+<<<
+${post.body.slice(0, 12000)}
+>>>`,
+      schema: sketchResponse,
+      temperature: 0.3,
+    },
+  );
+  const warnings: string[] = [];
+  let labels = (data.labels ?? [])
+    .map((l) => l.trim().slice(0, 28))
+    .filter(Boolean)
+    .slice(0, 6);
+  let kind: SketchKind = sketchKinds.includes(data.kind) ? data.kind : 'pipeline';
+  let values = kind === 'bar' ? (data.values ?? []).map((v) => v.trim()).slice(0, labels.length) : undefined;
+  const source = `${post.title}
+${post.excerpt}
+${post.body}`;
+  if (
+    kind === 'bar' &&
+    (!values || values.length !== labels.length || values.some((v) => unsupportedNumbers(v, source).length))
+  ) {
+    warnings.push('The suggested chart used numbers that aren’t in the post, so it was turned into a diagram instead.');
+    kind = labels.length === 2 ? 'compare' : 'pipeline';
+    values = undefined;
+  }
+  if (kind === 'compare' && labels.length !== 2) kind = 'pipeline';
+  if (labels.length < 2) labels = [post.title.slice(0, 28), 'Key idea'];
+  const caption = (data.caption ?? '').trim().slice(0, 90);
+  const spec: SketchSpec = { kind, labels, ...(values ? { values } : {}), ...(caption ? { caption } : {}) };
+  for (const problem of sketchProblems(spec)) warnings.push(problem);
+  return { spec, warnings, model };
 }

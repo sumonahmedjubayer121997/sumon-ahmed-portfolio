@@ -8,6 +8,7 @@ import { SectionLabel } from '@/components/ui/SectionLabel';
 import { RevealText } from '@/components/ui/RevealText';
 import { Arrow } from '@/components/ui/Arrow';
 import { MagneticButton } from '@/components/ui/MagneticButton';
+import { Sketch } from '@/components/sketch/Sketch';
 
 const ARROW = 56;
 
@@ -91,6 +92,13 @@ export function BlogRow({ post }: { post: PostMeta }) {
             </span>
           </div>
           <span className="t-label col-span-10 col-start-3 flex gap-4 text-muted md:col-span-3 md:col-start-auto md:flex-col md:items-end md:gap-1.5">
+            {post.sketch && (
+              <Sketch
+                spec={post.sketch}
+                decorative
+                className="mb-3 hidden max-w-[210px] text-ink opacity-55 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100 md:block"
+              />
+            )}
             <span>{formatDate(post.date)}</span>
             <span className="transition-opacity duration-500 md:opacity-0 md:group-hover:opacity-100 md:group-focus-visible:opacity-100">
               {post.readingTime} read

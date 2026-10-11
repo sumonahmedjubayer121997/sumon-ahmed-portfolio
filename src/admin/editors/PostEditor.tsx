@@ -22,6 +22,7 @@ import {
   issueFor,
 } from '../ui';
 import { EditorState, PageHeader, placeholderProps } from './common';
+import { SketchField } from './SketchField';
 
 const template = (): Post => ({
   slug: '',
@@ -32,6 +33,7 @@ const template = (): Post => ({
   updated: '',
   tags: [],
   body: '',
+  sketch: null,
   order: 99,
   published: false,
   placeholders: [],
@@ -50,6 +52,11 @@ const SYNTAX: Array<[string, string]> = [
   ['> text', 'quote'],
   ['![What it shows](https://…/image.png "Caption")', 'image (describe it for screen readers)'],
   [`<Demo kind="tfidf" />`, `live demo: ${postDemoKinds.join(', ')}`],
+  ['==key sentence==', 'hand-drawn highlighter'],
+  ['((0.81))', 'circle a number or word'],
+  ['> [!MARGIN] note', 'handwritten note beside the paragraph above'],
+  ['<Sketch template="pipeline" labels="Docs, Chunks, LLM" />', 'hand-drawn diagram (pipeline, cycle, compare)'],
+  ['<Sketch chart="bar" data="Fixed: 0.62, Headings: 0.81" />', 'hand-drawn chart of your own numbers'],
 ];
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -233,6 +240,12 @@ export default function PostEditor() {
                 )}
               </Field>
             </Panel>
+
+            <SketchField
+              value={d.sketch ?? null}
+              onChange={(v) => ed.edit((x) => void (x.sketch = v))}
+              post={{ title: d.title, excerpt: d.excerpt, body: d.body }}
+            />
 
             <Panel
               title="Post"

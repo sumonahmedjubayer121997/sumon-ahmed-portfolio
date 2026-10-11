@@ -137,8 +137,8 @@ async function finalise(raw: RawBundle) {
     if (p.date > today) continue;
     const { blocks } = parseMarkdown(p.body);
     bodies[p.slug] = await highlight(blocks);
-    const { slug, index, title, excerpt, date, updated, tags, order } = p;
-    posts.push({ slug, index, title, excerpt, date, updated, tags, order, readingTime: readingTime(blocks) });
+    const { slug, index, title, excerpt, date, updated, tags, order, sketch } = p;
+    posts.push({ slug, index, title, excerpt, date, updated, tags, order, readingTime: readingTime(blocks), sketch });
   }
   const { cv: _cv, ...rest } = raw;
   void _cv;
