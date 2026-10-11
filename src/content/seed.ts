@@ -59,6 +59,7 @@ export function seedContent() {
     figures: [],
     repoUrl: REPOS[p.slug] ?? '',
     liveUrl: '',
+    coverSeed: 0,
     order: i,
     published: true,
     placeholders: PROJECT_PLACEHOLDERS[p.slug] ?? ['outcomes', 'repoUrl', 'decisions', 'figures'],

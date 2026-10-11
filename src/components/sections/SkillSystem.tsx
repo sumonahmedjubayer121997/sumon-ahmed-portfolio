@@ -22,6 +22,11 @@ import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { RevealText } from '@/components/ui/RevealText';
+import { ConceptGlyph } from '@/components/geometric/Geometric';
+import { conceptIds, type ConceptId } from '@/content/schema';
+
+/** Skill groups that share an id with a project concept get its shape. */
+const isConcept = (id: string): id is ConceptId => (conceptIds as readonly string[]).includes(id);
 
 type SkillData = { group: string; kind: 'skill' | 'group' };
 
@@ -250,6 +255,7 @@ function Ecosystem() {
                 onBlur={() => setActiveGroup(null)}
                 onClick={() => setActiveGroup(on ? null : g.id)}
               >
+                {isConcept(g.id) && <ConceptGlyph concept={g.id} accent={on} className="-mt-px mr-2 align-middle" />}
                 {g.label}
                 <span className="ml-2 opacity-50">{g.items.length}</span>
               </button>

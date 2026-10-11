@@ -31,6 +31,7 @@ import {
 } from '../ui';
 import { EditorState, PageHeader, placeholderProps } from './common';
 import { FigureEditor, blankFigure } from './FigureEditor';
+import { ConceptGlyph, GeometricCover } from '@/components/geometric/Geometric';
 
 const CONCEPT_LABELS: Record<ConceptId, string> = {
   ai: 'AI',
@@ -63,6 +64,7 @@ const template = (): Project => ({
   concepts: ['ml'],
   position: { x: 0.63, y: 0.5, align: 'left' },
   preview: 'interface',
+  coverSeed: 0,
   problem: '',
   approach: [],
   pipeline: [],
@@ -534,6 +536,7 @@ export default function ProjectEditor() {
                           )
                         }
                       />
+                      <ConceptGlyph concept={c} accent={d.concepts[0] === c} />
                       {CONCEPT_LABELS[c]}
                     </label>
                   ))}
@@ -542,6 +545,29 @@ export default function ProjectEditor() {
                   <p className="text-[0.8rem] text-[#8f1d17]">{issueFor(ed.issues, 'concepts')}</p>
                 )}
               </fieldset>
+              <div className="grid items-center gap-5 border-t border-[var(--line)] pt-5 sm:grid-cols-[minmax(0,320px)_1fr]">
+                <div className="border border-[var(--line)] bg-paper p-3">
+                  <GeometricCover concepts={d.concepts} seed={d.coverSeed ?? 0} />
+                </div>
+                <div className="grid gap-3">
+                  <p className="t-label text-[10px] text-ink-2">Cover</p>
+                  <p className="text-[0.9rem] leading-relaxed text-muted">
+                    Made from the concepts above: each has its own shape, and the first one ticked is the main one, in
+                    orange. Shuffle until you like the arrangement; it&rsquo;s saved with the project, so it never
+                    changes by itself.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => ed.edit((x) => void (x.coverSeed = 1 + Math.floor(Math.random() * 9998)))}>
+                      Shuffle ↻
+                    </Button>
+                    {(d.coverSeed ?? 0) !== 0 && (
+                      <Button variant="ghost" onClick={() => ed.edit((x) => void (x.coverSeed = 0))}>
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
             </Panel>
 
             <SaveBar

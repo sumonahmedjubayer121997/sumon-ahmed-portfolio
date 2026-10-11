@@ -48,6 +48,11 @@ through `src/content/index.ts`.
   `<Sketch chart="bar" data="Fixed: 0.62, Headings: 0.81" />`, `==highlight==`, `((0.81))` to circle, and
   `> [!MARGIN] note` for a handwritten note beside the paragraph above (below it on narrow screens). Drawn in code with a
   seeded wobble (same markup on server and client), labels in Caveat.
+- **Geometric system for projects** (`src/content/cover.ts`, `components/geometric/`): one shape per concept — Data
+  circle, ML half circle, LLM quarter circle, RAG nested square, AI triangle, Software bars — used for each project's
+  **cover** (header and link preview; the first concept is the main one, in orange; Project editor → Presentation →
+  _Shuffle_ saves the arrangement as `coverSeed`), the concept nodes on the project map, concept tags, the project index
+  and the skill groups.
 - **At build time** each post is parsed and its code highlighted (shiki, colours adjusted to 4.5:1 contrast) into
   `src/generated/posts.json`, loaded only by the post page. The site gets `/blog` (all notes, filterable by tag),
   `/rss.xml`, a table of contents for posts with 3+ sections, heading links, share buttons and related notes.

@@ -139,6 +139,7 @@ const routes: Route[] = [
       title: p.title,
       footer: `${host}/work`,
       tags: p.stack,
+      cover: { concepts: p.concepts, seed: p.coverSeed },
     },
     ld: {
       '@context': 'https://schema.org',

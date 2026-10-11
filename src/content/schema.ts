@@ -99,6 +99,8 @@ export const projectSchema = z
       align: z.enum(['left', 'right']),
     }),
     preview: z.enum(previewKinds),
+    /** Arrangement of the geometric cover (Shuffle in the admin picks a new one). */
+    coverSeed: z.number().int().min(0).default(0),
     problem: z.string().min(1),
     approach: z.array(z.object({ title: z.string().min(1), body: z.string().min(1) })),
     pipeline: z.array(z.string().min(1)),
