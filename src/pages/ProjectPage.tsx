@@ -1,6 +1,6 @@
 import { Suspense, lazy, type ReactNode } from 'react';
 import { useParams } from 'react-router';
-import { getProject, projects, type DemoKind } from '@/content';
+import { concepts, getProject, projects, type DemoKind } from '@/content';
 import { pipelines } from '@/data/aiLab';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { TransitionLink } from '@/components/ui/TransitionLink';
@@ -12,6 +12,7 @@ import { ScrollInertia } from '@/components/ui/ScrollInertia';
 import { ProjectPreview } from '@/components/previews/ProjectPreview';
 import { EvaluationFigure } from '@/components/figures/EvaluationFigure';
 import { PipelineVisualization } from '@/components/sections/PipelineVisualization';
+import { ConceptGlyph, GeometricCover } from '@/components/geometric/Geometric';
 import NotFoundPage from './NotFoundPage';
 
 const TfidfDemo = lazy(() => import('@/components/demos/TfidfDemo'));
@@ -58,11 +59,31 @@ export default function ProjectPage() {
           <Arrow direction="left" className="transition-transform duration-500 group-hover:-translate-x-1" />
           All work
         </TransitionLink>
-        <p className="t-label mt-14 text-muted">
-          {project.index} / {String(projects.length).padStart(2, '0')} — {project.discipline}
-        </p>
-        <IntroText text={project.title} className="t-h1 mt-6 max-w-[15ch]" />
-        <p className="t-lead mt-8 max-w-[56ch] text-ink-2">{project.summary}</p>
+        <div className="mt-14 grid items-end gap-10 md:grid-cols-12">
+          <div className="md:col-span-7">
+            <p className="t-label text-muted">
+              {project.index} / {String(projects.length).padStart(2, '0')} — {project.discipline}
+            </p>
+            <IntroText text={project.title} className="t-h1 mt-6 max-w-[15ch]" />
+            <p className="t-lead mt-8 max-w-[56ch] text-ink-2">{project.summary}</p>
+            <ul className="mt-8 flex flex-wrap gap-2" aria-label="Areas">
+              {project.concepts.map((c, n) => (
+                <li
+                  key={c}
+                  className="t-label inline-flex items-center gap-2 rounded-full border border-[var(--line-strong)] px-3 py-1.5 text-[10px] text-ink"
+                >
+                  <ConceptGlyph concept={c} accent={n === 0} />
+                  {concepts.find((x) => x.id === c)?.label ?? c}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <GeometricCover
+            concepts={project.concepts}
+            seed={project.coverSeed}
+            className="max-w-[420px] md:col-span-5 md:ml-auto md:w-full"
+          />
+        </div>
 
         <dl className="mt-14 grid grid-cols-2 gap-x-6 gap-y-8 border-t border-[var(--line)] pt-6 md:grid-cols-4">
           {[

@@ -2,6 +2,7 @@ import { projects } from '@/content';
 import { TransitionLink } from '@/components/ui/TransitionLink';
 import { SwapArrow } from '@/components/ui/Arrow';
 import { ProjectPreview } from '@/components/previews/ProjectPreview';
+import { ConceptGlyph } from '@/components/geometric/Geometric';
 
 /**
  * Editorial index of projects. The default on touch/small screens and an
@@ -23,7 +24,12 @@ export function ProjectIndex({ onHover }: { onHover?: (slug: string | null) => v
             <span className="t-h3 col-span-10 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-3 md:col-span-6">
               {p.title}
             </span>
-            <span className="t-label col-span-10 col-start-3 text-muted md:col-span-3 md:col-start-auto">
+            <span className="t-label col-span-10 col-start-3 flex items-center gap-2 text-muted md:col-span-3 md:col-start-auto">
+              <span className="flex gap-1" aria-hidden="true">
+                {p.concepts.map((c, n) => (
+                  <ConceptGlyph key={c} concept={c} accent={n === 0} className="h-2.5 w-2.5" />
+                ))}
+              </span>
               {p.discipline}
             </span>
             <span className="t-label hidden text-muted md:col-span-1 md:block">{p.year}</span>

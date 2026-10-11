@@ -8,6 +8,8 @@ import { resolve } from 'node:path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { layoutSketch, type SketchSpec, type SketchTone } from '../src/content/sketch';
+import { conceptShape, layoutCover } from '../src/content/cover';
+import type { ConceptId } from '../src/content/schema';
 
 const INK = '#151413';
 const MUTED = '#6b665d';
@@ -138,6 +140,34 @@ function sketchCard(spec: SketchSpec, width: number, style: Record<string, unkno
   );
 }
 
+/** A project's geometric cover (content/cover.ts) as an image. */
+function coverImage(concepts: ConceptId[], seed: number, width: number) {
+  const L = layoutCover(concepts, seed);
+  const height = Math.round((L.height * width) / L.width);
+  let body = `<line x1="36" x2="${L.width - 36}" y1="${L.baseline.y}" y2="${L.baseline.y}" stroke="${INK}" stroke-opacity="0.25"/>`;
+  body += `<circle cx="${L.ring.x}" cy="${L.ring.y}" r="${L.ring.r}" fill="none" stroke="${INK}" stroke-opacity="0.4" stroke-width="1.2"/>`;
+  for (const s of L.shapes) {
+    const color = s.fill === 'accent' ? ACCENT : INK;
+    body += `<g transform="translate(${s.x} ${s.y}) rotate(${s.rotate})">`;
+    for (const part of conceptShape(s.concept, s.size)) {
+      const c = part.tone === 'ink' ? INK : color;
+      body +=
+        part.mode === 'fill'
+          ? `<path d="${part.d}" fill="${c}"${part.opacity !== undefined ? ` fill-opacity="${part.opacity}"` : ''}/>`
+          : `<path d="${part.d}" fill="none" stroke="${c}" stroke-width="2.2"/>`;
+    }
+    body += '</g>';
+  }
+  return img(
+    svgUri(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${L.width} ${L.height}">${body}</svg>`,
+    ),
+    width,
+    height,
+    { position: 'absolute', right: 48, top: 150 },
+  );
+}
+
 export interface OgCard {
   /** Small mono line above the title, e.g. "Case study 02 · Machine Learning". */
   kicker: string;
@@ -149,6 +179,8 @@ export interface OgCard {
   tags: string[];
   /** A post's header sketch, drawn on the right instead of the network graphic. */
   sketch?: SketchSpec;
+  /** A project's geometric cover, drawn on the right instead of the network graphic. */
+  cover?: { concepts: ConceptId[]; seed: number };
 }
 
 const titleSize = (len: number) => (len <= 22 ? 96 : len <= 36 ? 76 : len <= 56 ? 64 : 56);
@@ -182,7 +214,9 @@ export function createOgRenderer(root: string, name: string) {
       },
       card.sketch
         ? sketchCard(card.sketch, 400, { right: 56, top: 190 })
-        : img(graph, 330, 430, { position: 'absolute', right: 52, top: 100 }),
+        : card.cover
+          ? coverImage(card.cover.concepts, card.cover.seed, 420)
+          : img(graph, 330, 430, { position: 'absolute', right: 52, top: 100 }),
       h(
         'div',
         { display: 'flex', alignItems: 'center', gap: 14, fontFamily: 'Mono', fontSize: 20, letterSpacing: 4 },

@@ -3,6 +3,7 @@ import type { Concept, Project } from '@/content';
 import { cn } from '@/lib/cn';
 import { TransitionLink } from '@/components/ui/TransitionLink';
 import { SwapArrow } from '@/components/ui/Arrow';
+import { ConceptGlyph } from '@/components/geometric/Geometric';
 
 export interface ProjectNodeProps {
   project: Project;
@@ -109,10 +110,12 @@ export function ConceptNode({
         onPointerDown={onPointerDown}
         aria-hidden="true"
       >
-        <span
+        <ConceptGlyph
+          concept={concept.id}
+          accent={active}
           className={cn(
-            'absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-[background-color,transform] duration-500',
-            active ? 'scale-150 bg-accent' : 'bg-ink',
+            'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-transform duration-500',
+            active && 'scale-[1.35]',
           )}
         />
       </div>
