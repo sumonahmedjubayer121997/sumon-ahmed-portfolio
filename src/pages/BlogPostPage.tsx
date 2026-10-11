@@ -16,6 +16,7 @@ import { cv } from '@/components/ui/Availability';
 import { Arrow } from '@/components/ui/Arrow';
 import { PipelineVisualization } from '@/components/sections/PipelineVisualization';
 import { PostBody, jumpToHeading } from '@/components/blog/PostBody';
+import { Sketch } from '@/components/sketch/Sketch';
 import NotFoundPage from './NotFoundPage';
 
 const TfidfDemo = lazy(() => import('@/components/demos/TfidfDemo'));
@@ -213,6 +214,14 @@ export default function BlogPostPage() {
         </p>
         <IntroText text={post.title} className="t-h1 mt-6 max-w-[16ch]" />
         <p className="t-lead mt-8 max-w-[52ch] text-ink-2">{post.excerpt}</p>
+        {post.sketch && (
+          <figure className="mt-12 max-w-[760px] md:mt-16">
+            <Sketch spec={post.sketch} animate />
+            {post.sketch.caption && (
+              <figcaption className="sketch-note mt-2 text-muted">{post.sketch.caption}</figcaption>
+            )}
+          </figure>
+        )}
       </header>
 
       <div ref={bodyRef} className="shell mt-16 md:mt-20">

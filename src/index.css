@@ -256,6 +256,71 @@ html[data-dragging] .preview-follower {
   }
 }
 
+/* ───────────────────────── Hand-drawn blog marks ───────────────────────── */
+/* Sketches (components/sketch), ==highlights==, ((circled)) text and margin notes. */
+.sketch-label,
+.sketch-note {
+  font-family: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+  font-weight: 500;
+}
+.sketch-note {
+  font-size: 1.4rem;
+  line-height: 1.15;
+}
+
+/* Drawn once, stroke by stroke (each path has pathLength=1); labels fade in after. */
+.sketch-draw path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: sketch-draw 0.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+.sketch-draw text {
+  opacity: 0;
+  animation: sketch-fade 0.5s ease forwards;
+}
+@keyframes sketch-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes sketch-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/* A highlighter stroke behind the words, wrapping across lines. */
+.sketch-hl {
+  color: inherit;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M1 5C20 2 46 4 99 2L98 17C64 19 30 17 2 19Z' fill='%23f28c28' fill-opacity='.34'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 100% 0.9em;
+  background-position: 0 70%;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding: 0 0.1em;
+}
+
+/* A loose pen circle around a number or word. */
+.sketch-circle {
+  position: relative;
+  margin: 0 0.4em;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.sketch-circle svg {
+  position: absolute;
+  left: -0.45em;
+  top: -0.3em;
+  width: calc(100% + 0.9em);
+  height: calc(100% + 0.6em);
+  overflow: visible;
+  pointer-events: none;
+  color: var(--color-accent);
+}
+
 /* ───────────────────────── Reduced motion ───────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,

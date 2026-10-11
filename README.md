@@ -41,6 +41,13 @@ through `src/content/index.ts`.
   `![alt](https://…)` images, links and `<Demo kind="tfidf" />` for live demos) with a live preview. The syntax is
   MDX-compatible. Invalid posts (an unclosed code block, an unknown demo, an image without alt text) can't be saved and
   fail the build.
+- **Hand-drawn blog marks** (`src/content/sketch.ts`, `components/sketch/`): a **header sketch** per post (Post editor →
+  Header sketch: pipeline, cycle, compare or a chart of your numbers; _Suggest with AI_ picks one from the post and
+  refuses chart numbers the post doesn't contain) shown above the post — drawn once, stroke by stroke — on its card and
+  in its link preview. In the body: `<Sketch template="pipeline" labels="A, B, C" />`,
+  `<Sketch chart="bar" data="Fixed: 0.62, Headings: 0.81" />`, `==highlight==`, `((0.81))` to circle, and
+  `> [!MARGIN] note` for a handwritten note beside the paragraph above (below it on narrow screens). Drawn in code with a
+  seeded wobble (same markup on server and client), labels in Caveat.
 - **At build time** each post is parsed and its code highlighted (shiki, colours adjusted to 4.5:1 contrast) into
   `src/generated/posts.json`, loaded only by the post page. The site gets `/blog` (all notes, filterable by tag),
   `/rss.xml`, a table of contents for posts with 3+ sections, heading links, share buttons and related notes.

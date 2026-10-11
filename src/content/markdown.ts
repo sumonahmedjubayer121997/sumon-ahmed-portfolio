@@ -10,10 +10,16 @@
  *   > [!NOTE]   (or [!TIP], [!WARNING])  a callout; a plain `>` is a quote
  *   ![What the image shows](https://…/image.png "Optional caption")
  *   <Demo kind="tfidf" />   an interactive demo from the site
+ *   <Sketch template="pipeline" labels="Docs, Chunks, LLM" />   a hand-drawn diagram (pipeline, cycle, compare)
+ *   <Sketch chart="bar" data="Fixed: 0.62, Headings: 0.81" />   a hand-drawn chart of your own numbers
+ *   > [!MARGIN] note   a handwritten note beside the paragraph above it
+ *   ==highlight== and ((0.81)) inline   a highlighter stroke, a circled number
  *
  * Everything here is also valid MDX (callouts use GitHub's alert syntax), so
  * posts carry over unchanged if the blog moves to MDX.
  */
+
+import { parseSketchTag, type SketchSpec } from './sketch';
 
 export const postDemoKinds = ['tfidf', 'rag-pipeline', 'agent-pipeline'] as const;
 export type PostDemoKind = (typeof postDemoKinds)[number];
@@ -37,7 +43,10 @@ export type Block =
   | { type: 'callout'; kind: CalloutKind; text: string }
   | { type: 'quote'; text: string }
   | { type: 'image'; src: string; alt: string; caption?: string }
-  | { type: 'demo'; demo: PostDemoKind };
+  | { type: 'demo'; demo: PostDemoKind }
+  | { type: 'sketch'; sketch: SketchSpec }
+  /** A handwritten note shown beside the block before it (below it on narrow screens). */
+  | { type: 'margin'; text: string };
 
 const isDemo = (k: string): k is PostDemoKind => (postDemoKinds as readonly string[]).includes(k);
 
@@ -126,10 +135,16 @@ export function parseMarkdown(src: string): { blocks: Block[]; errors: string[] 
       for (; i < lines.length && lines[i].trim().startsWith('>'); i++)
         quoted.push(lines[i].trim().replace(/^>\s?/, ''));
       i--;
-      const alert = /^\[!(NOTE|TIP|WARNING)\]\s*(.*)$/i.exec(quoted[0] ?? '');
+      const alert = /^\[!(NOTE|TIP|WARNING|MARGIN)\]\s*(.*)$/i.exec(quoted[0] ?? '');
       const text = (alert ? [alert[2], ...quoted.slice(1)] : quoted).filter(Boolean).join(' ').trim();
-      if (!text) errors.push(`${at}: the ${alert ? 'callout' : 'quote'} is empty`);
-      else if (alert) blocks.push({ type: 'callout', kind: alert[1].toLowerCase() as CalloutKind, text });
+      const margin = alert?.[1].toUpperCase() === 'MARGIN';
+      if (!text) errors.push(`${at}: the ${margin ? 'margin note' : alert ? 'callout' : 'quote'} is empty`);
+      else if (margin) {
+        const prev = blocks.at(-1);
+        if (!prev || prev.type === 'margin' || prev.type === 'h2' || prev.type === 'h3')
+          errors.push(`${at}: a margin note goes right after the paragraph it comments on`);
+        else blocks.push({ type: 'margin', text });
+      } else if (alert) blocks.push({ type: 'callout', kind: alert[1].toLowerCase() as CalloutKind, text });
       else blocks.push({ type: 'quote', text });
       continue;
     }
@@ -157,6 +172,14 @@ export function parseMarkdown(src: string): { blocks: Block[]; errors: string[] 
             ? `${at}: unknown demo “${kind}” — use one of ${postDemoKinds.join(', ')}`
             : `${at}: write demos as <Demo kind="tfidf" />`,
         );
+      continue;
+    }
+
+    if (t.startsWith('<Sketch')) {
+      flush();
+      const r = parseSketchTag(t);
+      if ('spec' in r) blocks.push({ type: 'sketch', sketch: r.spec });
+      else errors.push(`${at}: ${r.error}`);
       continue;
     }
 
@@ -204,7 +227,9 @@ export function stripInline(text: string) {
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/`([^`]+)`/g, '$1');
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/==(\S[^=]*?\S|\S)==/g, '$1')
+    .replace(/\(\((\S[^()]*?\S|\S)\)\)/g, '$1');
 }
 
 /** Minutes to read at ~220 words per minute (code counts too — it has to be read). */
@@ -215,7 +240,7 @@ export function readingTime(blocks: Block[]) {
         ? b.items.join(' ')
         : b.type === 'code'
           ? b.code
-          : b.type === 'demo'
+          : b.type === 'demo' || b.type === 'sketch'
             ? ''
             : b.type === 'image'
               ? (b.caption ?? '')

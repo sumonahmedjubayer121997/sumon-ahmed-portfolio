@@ -98,6 +98,7 @@ export function seedContent() {
     tags: [...p.tags],
     body: p.body.trim(),
     updated: '',
+    sketch: null,
     order: i,
     published: true,
     placeholders: ['body'],

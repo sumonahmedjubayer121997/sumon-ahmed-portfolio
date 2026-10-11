@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
+import { layoutSketch, type SketchSpec, type SketchTone } from '../src/content/sketch';
 
 const INK = '#151413';
 const MUTED = '#6b665d';
@@ -35,6 +36,12 @@ function loadFonts(root: string) {
       weight: 400,
       style: 'italic',
       data: fontFile(root, '@fontsource/instrument-serif', 'instrument-serif-latin-400-italic.woff'),
+    },
+    {
+      name: 'Hand',
+      weight: 500,
+      style: 'normal',
+      data: fontFile(root, '@fontsource/caveat', 'caveat-latin-500-normal.woff'),
     },
   ] as const;
 }
@@ -82,6 +89,55 @@ const LOGO = svgUri(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="28" height="28"><g fill="${INK}"><circle cx="4" cy="6" r="1.4" opacity="0.5"/><circle cx="4" cy="14" r="1.4" opacity="0.5"/><circle cx="10" cy="4" r="1.4" opacity="0.8"/><circle cx="10" cy="10" r="1.4" opacity="0.8"/><circle cx="10" cy="16" r="1.4" opacity="0.8"/></g><circle cx="16.5" cy="10" r="2" fill="${ACCENT}"/></svg>`,
 );
 
+const TONE: Record<SketchTone, string> = { ink: INK, muted: MUTED, accent: ACCENT };
+
+/**
+ * A post's header sketch for its preview: strokes as an image, labels as text in
+ * the handwriting font (text inside an SVG image wouldn't get the font), both
+ * placed from the same layout the site draws.
+ */
+function sketchCard(spec: SketchSpec, width: number, style: Record<string, unknown>): El {
+  const L = layoutSketch(spec);
+  const k = width / L.width;
+  const height = Math.round(L.height * k);
+  const paths = L.strokes
+    .map(
+      (s) =>
+        `<path d="${s.d}" fill="none" stroke="${TONE[s.tone]}" stroke-width="${s.width * 1.3}" stroke-linecap="round" stroke-linejoin="round"/>`,
+    )
+    .join('');
+  const strokes = svgUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${L.width} ${L.height}">${paths}</svg>`,
+  );
+  const box = 320;
+  const labels = L.texts.map((t) => {
+    const size = t.size * k;
+    const left = t.anchor === 'middle' ? t.x * k - box / 2 : t.anchor === 'end' ? t.x * k - box : t.x * k;
+    return h(
+      'div',
+      {
+        position: 'absolute',
+        left,
+        top: t.y * k - size * 0.62,
+        width: box,
+        display: 'flex',
+        justifyContent: t.anchor === 'middle' ? 'center' : t.anchor === 'end' ? 'flex-end' : 'flex-start',
+        fontFamily: 'Hand',
+        fontSize: size,
+        lineHeight: 1.2,
+        color: TONE[t.tone],
+      },
+      t.text,
+    );
+  });
+  return h(
+    'div',
+    { position: 'absolute', width, height, display: 'flex', ...style },
+    img(strokes, width, height),
+    ...labels,
+  );
+}
+
 export interface OgCard {
   /** Small mono line above the title, e.g. "Case study 02 · Machine Learning". */
   kicker: string;
@@ -91,6 +147,8 @@ export interface OgCard {
   /** Bottom-left, e.g. the site and section without the protocol. */
   footer: string;
   tags: string[];
+  /** A post's header sketch, drawn on the right instead of the network graphic. */
+  sketch?: SketchSpec;
 }
 
 const titleSize = (len: number) => (len <= 22 ? 96 : len <= 36 ? 76 : len <= 56 ? 64 : 56);
@@ -122,7 +180,9 @@ export function createOgRenderer(root: string, name: string) {
         fontFamily: 'Inter Tight',
         position: 'relative',
       },
-      img(graph, 330, 430, { position: 'absolute', right: 52, top: 100 }),
+      card.sketch
+        ? sketchCard(card.sketch, 400, { right: 56, top: 190 })
+        : img(graph, 330, 430, { position: 'absolute', right: 52, top: 100 }),
       h(
         'div',
         { display: 'flex', alignItems: 'center', gap: 14, fontFamily: 'Mono', fontSize: 20, letterSpacing: 4 },
